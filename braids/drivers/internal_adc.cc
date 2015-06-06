@@ -33,6 +33,7 @@
 namespace braids {
   
 void InternalAdc::Init() {
+#ifndef OLIMEX_STM32
   DMA_InitTypeDef dma_init;
   ADC_InitTypeDef adc_init;
   GPIO_InitTypeDef gpio_init;
@@ -85,6 +86,10 @@ void InternalAdc::Init() {
 
   ADC_DMACmd(ADC1, ENABLE);
   ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+#else
+// Can be enabled on PC4/ADC14 or PC5/ADC15 if required
+  disabled_ = true;
+#endif
 }
 
 }  // namespace braids

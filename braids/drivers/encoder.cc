@@ -30,10 +30,20 @@
 
 namespace braids {
 
+const uint16_t kPinSwitch = GPIO_Pin_13;
+#ifndef OLIMEX_STM32
+const uint16_t kPinA = GPIO_Pin_14;
+const uint16_t kPinB = GPIO_Pin_15;
+#else
+// 14/15 -> OSC32_IN/OUT not available on header
+const uint16_t kPinA = GPIO_Pin_1;
+const uint16_t kPinB = GPIO_Pin_0;
+#endif
+
 void Encoder::Init() {
   GPIO_InitTypeDef gpio_init;
 
-  gpio_init.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+  gpio_init.GPIO_Pin = kPinSwitch | kPinA | kPinB;
   gpio_init.GPIO_Speed = GPIO_Speed_10MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_Init(GPIOC, &gpio_init);
@@ -44,11 +54,11 @@ void Encoder::Init() {
 
 void Encoder::Debounce() {
   switch_state_ = (switch_state_ << 1) | \
-      GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13);
+      GPIO_ReadInputDataBit(GPIOC, kPinSwitch);
   quadrature_decoding_state_[0] = (quadrature_decoding_state_[0] << 1) | \
-      GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_14);
+      GPIO_ReadInputDataBit(GPIOC, kPinA);
   quadrature_decoding_state_[1] = (quadrature_decoding_state_[1] << 1) | \
-      GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_15);
+      GPIO_ReadInputDataBit(GPIOC, kPinB);
 }
 
 }  // namespace braids

@@ -34,9 +34,17 @@
 
 namespace braids {
 
+#ifndef OLIMEX_STM32
 const uint16_t kPinClk = GPIO_Pin_11;
-const uint16_t kPinEnable = GPIO_Pin_10;
 const uint16_t kPinData = GPIO_Pin_1;
+#define GPIO_DISP_SER GPIOB
+#else
+// To try and support SPI3 on H405, use GPIOC:10 for clk, GPIOC:12 for data
+const uint16_t kPinClk = GPIO_Pin_10;
+const uint16_t kPinData = GPIO_Pin_12;
+#define GPIO_DISP_SER GPIOC
+#endif
+const uint16_t kPinEnable = GPIO_Pin_10;
 
 const uint16_t kCharacterEnablePins[] = {
   GPIO_Pin_5,
@@ -47,9 +55,7 @@ const uint16_t kCharacterEnablePins[] = {
 
 void Display::Init() {
   GPIO_InitTypeDef gpio_init;
-  gpio_init.GPIO_Pin = kPinClk;
-  gpio_init.GPIO_Pin |= kPinEnable;
-  gpio_init.GPIO_Pin |= kPinData;
+  gpio_init.GPIO_Pin = kPinEnable;
   gpio_init.GPIO_Pin |= kCharacterEnablePins[0];
   gpio_init.GPIO_Pin |= kCharacterEnablePins[1];
   gpio_init.GPIO_Pin |= kCharacterEnablePins[2];
@@ -58,6 +64,11 @@ void Display::Init() {
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_Init(GPIOB, &gpio_init);
+
+  gpio_init.GPIO_Pin = kPinClk | kPinData;
+  gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+  gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_Init(GPIO_DISP_SER, &gpio_init);
 
   GPIOB->BSRR = kPinEnable;
   active_position_ = 0;
@@ -86,14 +97,14 @@ void Display::Print(const char* s) {
 void Display::Shift14SegmentsWord(uint16_t data) {
   GPIOB->BRR = kPinEnable;
   for (uint16_t i = 0; i < 16; ++i) {
-    GPIOB->BRR = kPinClk;
+    GPIO_DISP_SER->BRR = kPinClk;
     if (data & 1) {
-      GPIOB->BSRR = kPinData;
+      GPIO_DISP_SER->BSRR = kPinData;
     } else {
-      GPIOB->BRR = kPinData;
+      GPIO_DISP_SER->BRR = kPinData;
     }
     data >>= 1;
-    GPIOB->BSRR = kPinClk;
+    GPIO_DISP_SER->BSRR = kPinClk;
   }
   GPIOB->BSRR = kPinEnable;
 }
