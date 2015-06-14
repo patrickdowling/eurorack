@@ -29,7 +29,7 @@
 #ifndef BRAIDS_DRIVERS_DAC_H_
 #define BRAIDS_DRIVERS_DAC_H_
 
-#include <stm32f10x_conf.h>
+#include "../platform.h"
 #include "stmlib/stmlib.h"
 
 namespace braids {
@@ -41,8 +41,8 @@ class Dac {
   
   void Init();
   inline void Write(uint16_t value) {
-    GPIOB->BSRR = GPIO_Pin_12;
-    GPIOB->BRR = GPIO_Pin_12;
+    GPIO_SET(GPIOB,GPIO_Pin_12);
+    GPIO_RESET(GPIOB,GPIO_Pin_12);
     SPI2->DR = value >> 8;
     __asm__("nop");
     __asm__("nop");

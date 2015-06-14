@@ -29,7 +29,7 @@
 #ifndef BRAIDS_DRIVERS_ENCODER_H_
 #define BRAIDS_DRIVERS_ENCODER_H_
 
-#include <stm32f10x_conf.h>
+#include "../platform.h"
 #include "stmlib/stmlib.h"
 
 namespace braids {

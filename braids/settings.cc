@@ -66,7 +66,11 @@ const SettingsData kInitSettings = {
   "GREETINGS FROM MUTABLE INSTRUMENTS *EDIT ME*",
 };
 
+#ifndef STM32F4XX
 Storage<0x8020000, 4> storage;
+#else
+stmlib::Storage<1> storage;
+#endif
 
 void Settings::Init() {
   if (!storage.ParsimoniousLoad(&data_, &version_token_)) {

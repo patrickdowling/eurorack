@@ -36,18 +36,24 @@ void DebugPin::Init() {
   GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = GPIO_Pin_10;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+#ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
+#else
+  gpio_init.GPIO_Mode = GPIO_Mode_OUT;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
+#endif
   GPIO_Init(GPIOA, &gpio_init);
 
-  GPIOA->BSRR = GPIO_Pin_10;
+  High();
 }
 
 void DebugPin::High() {
-  GPIOA->BSRR = GPIO_Pin_10;
+  GPIO_SET(GPIOA,GPIO_Pin_10);
 }
 
 void DebugPin::Low() {
-  GPIOA->BRR = GPIO_Pin_10;
+  GPIO_RESET(GPIOA,GPIO_Pin_10);
 }
 
 }  // namespace braids

@@ -37,12 +37,18 @@ void System::Init(uint32_t timer_period, bool application) {
     NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x4000);
   }
 
+#ifndef STM32F4XX
   RCC_APB2PeriphClockCmd(
       RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC |
       RCC_APB2Periph_TIM1 | RCC_APB2Periph_SPI1 | RCC_APB2Periph_USART1 |
       RCC_APB2Periph_ADC1, ENABLE);
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+#else
+
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC, ENABLE);
+  RCC_AHB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+#endif
 
   TIM_TimeBaseInitTypeDef timer_init;
   timer_init.TIM_Period = timer_period;
@@ -58,7 +64,11 @@ void System::Init(uint32_t timer_period, bool application) {
   
   // DAC interrupt is given highest priority
   NVIC_InitTypeDef timer_interrupt;
+#ifndef STM32F4XX
   timer_interrupt.NVIC_IRQChannel = TIM1_UP_IRQn;
+#else
+  timer_interrupt.NVIC_IRQChannel = TIM1_UP_TIM10_IRQn;
+#endif
   timer_interrupt.NVIC_IRQChannelPreemptionPriority = 0;
   timer_interrupt.NVIC_IRQChannelSubPriority = 0;
   timer_interrupt.NVIC_IRQChannelCmd = ENABLE;

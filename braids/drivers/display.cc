@@ -65,15 +65,27 @@ void Display::Init() {
   gpio_init.GPIO_Pin |= kCharacterEnablePins[3];
   
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+#ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
+#else
+  gpio_init.GPIO_Mode = GPIO_Mode_OUT;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
+#endif
   GPIO_Init(GPIO_DISP_CTRL, &gpio_init);
 
   gpio_init.GPIO_Pin = kPinClk | kPinData;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+#ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
+#else
+  gpio_init.GPIO_Mode = GPIO_Mode_OUT;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
+#endif
   GPIO_Init(GPIO_DISP_SER, &gpio_init);
 
-  GPIO_DISP_CTRL->BSRR = kPinEnable;
+  GPIO_SET(GPIO_DISP_CTRL,kPinEnable);
   active_position_ = 0;
   brightness_pwm_cycle_ = 0;
   brightness_ = 3;
@@ -82,13 +94,13 @@ void Display::Init() {
 
 void Display::Refresh() {
   if (brightness_pwm_cycle_ <= brightness_) {
-    GPIO_DISP_CTRL->BRR = kCharacterEnablePins[active_position_];
+    GPIO_RESET(GPIO_DISP_CTRL,kCharacterEnablePins[active_position_]);
     active_position_ = (active_position_ + 1) % kDisplayWidth;
     Shift14SegmentsWord(chr_characters[
         static_cast<uint8_t>(buffer_[active_position_])]);
-    GPIO_DISP_CTRL->BSRR = kCharacterEnablePins[active_position_];
+    GPIO_SET(GPIO_DISP_CTRL,kCharacterEnablePins[active_position_]);
   } else {
-    GPIO_DISP_CTRL->BRR = kCharacterEnablePins[active_position_];
+    GPIO_RESET(GPIO_DISP_CTRL,kCharacterEnablePins[active_position_]);
   }
   brightness_pwm_cycle_ = (brightness_pwm_cycle_ + 1) % kBrightnessLevels;
 }
@@ -98,18 +110,18 @@ void Display::Print(const char* s) {
 }
 
 void Display::Shift14SegmentsWord(uint16_t data) {
-  GPIO_DISP_CTRL->BRR = kPinEnable;
+  GPIO_RESET(GPIO_DISP_CTRL,kPinEnable);
   for (uint16_t i = 0; i < 16; ++i) {
-    GPIO_DISP_SER->BRR = kPinClk;
+    GPIO_RESET(GPIO_DISP_SER,kPinClk);
     if (data & 1) {
-      GPIO_DISP_SER->BSRR = kPinData;
+      GPIO_SET(GPIO_DISP_SER,kPinData);
     } else {
-      GPIO_DISP_SER->BRR = kPinData;
+      GPIO_RESET(GPIO_DISP_SER,kPinData);
     }
     data >>= 1;
-    GPIO_DISP_SER->BSRR = kPinClk;
+    GPIO_SET(GPIO_DISP_SER,kPinClk);
   }
-  GPIO_DISP_CTRL->BSRR = kPinEnable;
+  GPIO_SET(GPIO_DISP_CTRL,kPinEnable);
 }
 
 }  // namespace braids

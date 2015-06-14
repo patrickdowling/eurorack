@@ -28,7 +28,7 @@
 
 #include "braids/drivers/internal_adc.h"
 
-#include <stm32f10x_conf.h>
+#include "../platform.h"
 
 namespace braids {
   

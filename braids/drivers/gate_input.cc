@@ -33,8 +33,15 @@ namespace braids {
 void GateInput::Init() {
   GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = GPIO_Pin_4;
+#ifndef STM32F4XX
   gpio_init.GPIO_Speed = GPIO_Speed_10MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_IPU;
+#else
+  gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
+  gpio_init.GPIO_Mode = GPIO_Mode_IN;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_UP;
+#endif
   GPIO_Init(GPIOA, &gpio_init);
   previous_state_ = true;
 }

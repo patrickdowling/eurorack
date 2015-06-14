@@ -1,6 +1,6 @@
-// Copyright 2012 Olivier Gillet.
+// Copyright 2015 Patrick Dowling.
 //
-// Author: Olivier Gillet (ol.gillet@gmail.com)
+// Author: Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,31 +21,32 @@
 // THE SOFTWARE.
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
-//
-// -----------------------------------------------------------------------------
-//
-// Driver for dumping log messages to the UART (TX pin).
 
-#ifndef BRAIDS_DRIVERS_UART_LOGGER_H_
-#define BRAIDS_DRIVERS_UART_LOGGER_H_
+#ifndef BRAIDS_PLATFORM_H_
+#define BRAIDS_PLATFORM_H_
 
-#include "../platform.h"
-#include "stmlib/stmlib.h"
+// TODO
+// stm lib has the function GPIO_SetBits but original Braids source used direct
+// register toggling. This their ugly child.
 
-namespace braids {
+#ifdef STM32F4XX
+#include <stm32f4xx_conf.h>
 
-class UartLogger {
- public:
-  UartLogger() { }
-  ~UartLogger() { }
-  
-  void Init(uint32_t baud_rate);
-  void Trace(uint8_t byte);
-  
- private:  
-  DISALLOW_COPY_AND_ASSIGN(UartLogger);
-};
+#define GPIO_SET(gpio,pins) \
+do { gpio->BSRRL = pins; } while(0)
 
-}  // namespace braids
+#define GPIO_RESET(gpio,pins) \
+do { gpio->BSRRH = pins; } while(0)
 
-#endif  // BRAIDS_DRIVERS_UART_LOGGER_H_
+#else
+#include <stm32f10x_conf.h>
+
+#define GPIO_SET(gpio,pins) \
+do { gpio->BSRR = pins; } while(0)
+
+#define GPIO_RESET(gpio,pins) \
+do { gpio->BRR = pins; } while(0)
+
+#endif
+
+#endif // BRAIDS_PLATFORM_H_

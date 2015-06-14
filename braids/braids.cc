@@ -22,7 +22,7 @@
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-#include <stm32f10x_conf.h>
+#include "platform.h"
 
 #include <algorithm>
 

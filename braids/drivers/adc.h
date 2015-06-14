@@ -29,7 +29,7 @@
 #ifndef BRAIDS_DRIVERS_ADC_H_
 #define BRAIDS_DRIVERS_ADC_H_
 
-#include <stm32f10x_conf.h>
+#include "../platform.h"
 #include "stmlib/stmlib.h"
 
 namespace braids {
@@ -49,8 +49,8 @@ class Adc {
       case 0:
         rx_word_ |= SPI1->DR;
         channels_[active_channel_] = rx_word_;
-        GPIOB->BSRR = GPIO_Pin_0;
-        GPIOB->BRR = GPIO_Pin_0;
+        GPIO_SET(GPIOB,GPIO_Pin_0);
+        GPIO_RESET(GPIOB,GPIO_Pin_0);
         SPI1->DR = 0x04 | 0x02;
         active_channel_ = (active_channel_ + 1) % kNumChannels;
         acquisition_stage_ = 1;

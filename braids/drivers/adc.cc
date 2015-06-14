@@ -39,20 +39,47 @@ void Adc::Init(bool double_speed) {
   GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = kPinSS;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+#ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
+#else
+  gpio_init.GPIO_Mode = GPIO_Mode_OUT;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
+#endif
   GPIO_Init(GPIOB, &gpio_init);
-  
+
   // Initialize MOSI and SCK pins.
   gpio_init.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+#ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
+#else
+  gpio_init.GPIO_Mode = GPIO_Mode_AF;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
+#endif
   GPIO_Init(GPIOA, &gpio_init);
-  
+
   // Initialize MISO pin.
   gpio_init.GPIO_Pin = GPIO_Pin_6;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+#ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+#else
+  gpio_init.GPIO_Mode = GPIO_Mode_AF;
+  gpio_init.GPIO_OType = GPIO_OType_PP;
+  gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
+#endif
   GPIO_Init(GPIOA, &gpio_init);
+
+#ifdef STM32F4XX
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_SPI1); // SPI1_SCK
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_SPI1); // SPI1_MOSI
+
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_SPI1); // SPI1_MISO
+
+  RCC_APB1PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+#endif
   
   // Initialize SPI
   SPI_InitTypeDef spi_init;

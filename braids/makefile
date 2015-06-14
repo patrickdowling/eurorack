@@ -22,6 +22,7 @@
 # 
 # See http://creativecommons.org/licenses/MIT/ for more information.
 
+ifneq ($(H405),true)
 # System specifications
 F_CRYSTAL      = 8000000L
 F_CPU          = 72000000L
@@ -29,9 +30,18 @@ SYSCLOCK       = SYSCLK_FREQ_72MHz
 FAMILY         = f10x
 DENSITY        = md
 MEMORY_MODE    = flash
-# USB            = enabled
-
 APPLICATION    = TRUE
+else
+F_CRYSTAL      = 8000000L
+F_CPU          = 168000000L
+SYSCLOCK       = SYSCLK_FREQ_168MHz
+FAMILY         = f4xx
+
+APPLICATION_LARGE = TRUE
+PROJECT_CONFIGURATION += -DH405
+TOOLCHAIN_PATH ?= /usr/local/arm-4.8.3/
+endif
+# USB            = enabled
 BOOTLOADER     = braids_bootloader
 
 # Preferred upload command
