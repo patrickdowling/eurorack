@@ -23,12 +23,19 @@
 # See http://creativecommons.org/licenses/MIT/ for more information.
 
 # System specifications
+ifneq ($(H405),true)
 F_CRYSTAL      = 8000000L
 F_CPU          = 72000000L
 SYSCLOCK       = SYSCLK_FREQ_72MHz
 FAMILY         = f10x
 DENSITY        = md
 MEMORY_MODE    = flash
+else
+F_CRYSTAL      = 8000000L
+F_CPU          = 168000000L
+SYSCLOCK       = SYSCLK_FREQ_168MHz
+FAMILY         = f4xx
+endif
 # USB            = enabled
 
 # Preferred upload command

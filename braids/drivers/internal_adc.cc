@@ -33,7 +33,7 @@
 namespace braids {
   
 void InternalAdc::Init() {
-#ifndef OLIMEX_STM32
+#if !defined(OLIMEX_STM32) && !defined(STM32F4XX)
   DMA_InitTypeDef dma_init;
   ADC_InitTypeDef adc_init;
   GPIO_InitTypeDef gpio_init;

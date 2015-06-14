@@ -22,7 +22,7 @@
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-#include <stm32f10x_conf.h>
+#include "../platform.h"
 #include <string.h>
 
 #include "stmlib/utils/dsp.h"
@@ -110,6 +110,7 @@ static uint32_t current_address;
 static uint16_t packet_index;
 
 void ProgramPage(const uint8_t* data, size_t size) {
+#ifndef STM32F4XX
   FLASH_Unlock();
   FLASH_ErasePage(current_address);
   const uint32_t* words = static_cast<const uint32_t*>(
@@ -118,6 +119,7 @@ void ProgramPage(const uint8_t* data, size_t size) {
     FLASH_ProgramWord(current_address, *words++);
     current_address += 4;
   }
+#endif
 }
 
 void PrintPageNumber(uint16_t page_number, bool error) {
@@ -164,6 +166,10 @@ void InitializeReception() {
   packet_index = 0;
   display.Print("\x98RDY");
 }
+
+#ifdef STM32F4XX
+#define PAGE_SIZE (uint16_t)0x800
+#endif
 
 uint8_t rx_buffer[PAGE_SIZE];
 const uint16_t kPacketsPerPage = PAGE_SIZE / kPacketSize;
