@@ -22,8 +22,13 @@
 # 
 # See http://creativecommons.org/licenses/MIT/ for more information.
 
-ifneq ($(H405),true)
+# Activate alternative pinouts for Olimex H103/H405 pcb
+ifeq ($(OLIMEX_STM32),true)
+	PROJECT_CONFIGURATION += -DOLIMEX_STM32
+endif
+
 # System specifications
+ifneq ($(H405),true)
 F_CRYSTAL      = 8000000L
 F_CPU          = 72000000L
 SYSCLOCK       = SYSCLK_FREQ_72MHz
@@ -38,7 +43,6 @@ SYSCLOCK       = SYSCLK_FREQ_168MHz
 FAMILY         = f4xx
 
 APPLICATION_LARGE = TRUE
-PROJECT_CONFIGURATION += -DH405
 TOOLCHAIN_PATH ?= /usr/local/arm-4.8.3/
 endif
 # USB            = enabled
