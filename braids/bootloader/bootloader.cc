@@ -22,7 +22,6 @@
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-#include "../platform.h"
 #include <string.h>
 
 #include "stmlib/utils/dsp.h"
@@ -47,7 +46,11 @@ const double kSampleRate = 48000.0;
 const double kModulationRate = 6000.0;
 const double kBitRate = 12000.0;
 
+#ifdef STM32F4XX
+const uint32_t kStartAddress = 0x08008000;
+#else
 const uint32_t kStartAddress = 0x08004000;
+#endif
 
 Adc adc;
 System sys;
@@ -88,7 +91,7 @@ void SysTick_Handler() {
 
 uint16_t discard_samples = 8000;
 
-void TIM1_UP_IRQHandler(void) {
+void PLATFORM_TIM1_UP_IRQHandler(void) {
   if (TIM_GetITStatus(TIM1, TIM_IT_Update) == RESET) {
     return;
   }
@@ -168,7 +171,7 @@ void InitializeReception() {
 }
 
 #ifdef STM32F4XX
-#define PAGE_SIZE (uint16_t)0x800
+#define PAGE_SIZE (uint16_t)16384
 #endif
 
 uint8_t rx_buffer[PAGE_SIZE];
@@ -176,6 +179,7 @@ const uint16_t kPacketsPerPage = PAGE_SIZE / kPacketSize;
 const char* kErrorStrings[2] = { "@SYN", "@CRC", };
 
 int main(void) {
+#if 0
   Init();
   InitializeReception();
 
@@ -231,6 +235,7 @@ int main(void) {
     }
   }
   
+#endif
   Uninitialize();
   JumpTo(kStartAddress);
   while (1) { }

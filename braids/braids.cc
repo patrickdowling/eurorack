@@ -22,7 +22,7 @@
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-#include "platform.h"
+#include "braids/drivers/platform.h"
 
 #include <algorithm>
 
@@ -92,7 +92,7 @@ void SysTick_Handler() {
   ui.Poll();
 }
 
-void TIM1_UP_IRQHandler(void) {
+void PLATFORM_TIM1_UP_IRQHandler(void) {
   if (!(TIM1->SR & TIM_IT_Update)) {
     return;
   }

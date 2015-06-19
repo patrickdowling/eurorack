@@ -32,9 +32,15 @@
 
 namespace braids {
 
+#ifdef OLIMEX_STM32
+const gpio_pin_t kPinDebug = GPIO_Pin_8;
+#else
+const gpio_pin_t kPinDebug = GPIO_Pin_10;
+#endif
+
 void DebugPin::Init() {
   GPIO_InitTypeDef gpio_init;
-  gpio_init.GPIO_Pin = GPIO_Pin_10;
+  gpio_init.GPIO_Pin = kPinDebug;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
 #ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -49,11 +55,11 @@ void DebugPin::Init() {
 }
 
 void DebugPin::High() {
-  GPIO_SET(GPIOA,GPIO_Pin_10);
+  GPIO_SET(GPIOA,kPinDebug);
 }
 
 void DebugPin::Low() {
-  GPIO_RESET(GPIOA,GPIO_Pin_10);
+  GPIO_RESET(GPIOA,kPinDebug);
 }
 
 }  // namespace braids

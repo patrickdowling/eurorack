@@ -29,7 +29,7 @@
 #ifndef BRAIDS_DRIVERS_GATE_INPUT_H_
 #define BRAIDS_DRIVERS_GATE_INPUT_H_
 
-#include "../platform.h"
+#include "braids/drivers/platform.h"
 #include "stmlib/stmlib.h"
 
 namespace braids {

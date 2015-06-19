@@ -32,7 +32,7 @@
 
 namespace braids {
   
-const uint16_t kPinSS = GPIO_Pin_0;
+const gpio_pin_t kPinSS = GPIO_Pin_0;
 
 void Adc::Init(bool double_speed) {
   // Initialize SS pin.
@@ -73,12 +73,10 @@ void Adc::Init(bool double_speed) {
   GPIO_Init(GPIOA, &gpio_init);
 
 #ifdef STM32F4XX
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_SPI1); // SPI1_SCK
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_SPI1); // SPI1_MOSI
-
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_SPI1); // SPI1_MISO
-
-  RCC_APB1PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_SPI1); // SPI1_MOSI
 #endif
   
   // Initialize SPI

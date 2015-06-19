@@ -29,7 +29,7 @@
 #ifndef BRAIDS_DRIVERS_DAC_H_
 #define BRAIDS_DRIVERS_DAC_H_
 
-#include "../platform.h"
+#include "platform.h"
 #include "stmlib/stmlib.h"
 
 namespace braids {

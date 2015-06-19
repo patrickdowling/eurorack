@@ -22,8 +22,8 @@
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-#ifndef BRAIDS_PLATFORM_H_
-#define BRAIDS_PLATFORM_H_
+#ifndef BRAIDS_DRIVERS_PLATFORM_H_
+#define BRAIDS_DRIVERS_PLATFORM_H_
 
 // TODO
 // stm lib has the function GPIO_SetBits but original Braids source used direct
@@ -32,14 +32,21 @@
 #ifdef STM32F4XX
 #include <stm32f4xx_conf.h>
 
+typedef uint32_t gpio_pin_t;
+
 #define GPIO_SET(gpio,pins) \
 do { gpio->BSRRL = pins; } while(0)
 
 #define GPIO_RESET(gpio,pins) \
 do { gpio->BSRRH = pins; } while(0)
 
+#define PLATFORM_TIM1_UP_IRQn TIM1_UP_TIM10_IRQn
+#define PLATFORM_TIM1_UP_IRQHandler TIM1_UP_TIM10_IRQHandler
+
 #else
 #include <stm32f10x_conf.h>
+
+typedef uint16_t gpio_pin_t;
 
 #define GPIO_SET(gpio,pins) \
 do { gpio->BSRR = pins; } while(0)
@@ -47,6 +54,9 @@ do { gpio->BSRR = pins; } while(0)
 #define GPIO_RESET(gpio,pins) \
 do { gpio->BRR = pins; } while(0)
 
+#define PLATFORM_TIM1_UP_IRQn TIM1_UP_IRQn
+#define PLATFORM_TIM1_UP_IRQHandler TIM1_UP_IRQHandler
+
 #endif
 
-#endif // BRAIDS_PLATFORM_H_
+#endif // BRAIDS_DRIVERS_PLATFORM_H_

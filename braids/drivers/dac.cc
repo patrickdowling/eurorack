@@ -52,6 +52,7 @@ void Dac::Init() {
 #ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
 #else
+  gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_AF;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -59,10 +60,9 @@ void Dac::Init() {
   GPIO_Init(GPIOB, &gpio_init);
 
 #ifdef STM32F4XX
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_SPI2); // SPI2_SCK
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_SPI2); // SPI2_MOSI
-
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
 #endif
   
   // Initialize SPI

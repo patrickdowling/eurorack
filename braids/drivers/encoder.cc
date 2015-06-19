@@ -30,14 +30,14 @@
 
 namespace braids {
 
-const uint16_t kPinSwitch = GPIO_Pin_13;
+const gpio_pin_t kPinSwitch = GPIO_Pin_13;
 #ifndef OLIMEX_STM32
-const uint16_t kPinA = GPIO_Pin_14;
-const uint16_t kPinB = GPIO_Pin_15;
+const gpio_pin_t kPinA = GPIO_Pin_14;
+const gpio_pin_t kPinB = GPIO_Pin_15;
 #else
 // 14/15 -> OSC32_IN/OUT not available on header
-const uint16_t kPinA = GPIO_Pin_1;
-const uint16_t kPinB = GPIO_Pin_0;
+const gpio_pin_t kPinA = GPIO_Pin_1;
+const gpio_pin_t kPinB = GPIO_Pin_0;
 #endif
 
 void Encoder::Init() {

@@ -22,13 +22,21 @@
 # 
 # See http://creativecommons.org/licenses/MIT/ for more information.
 
-# Activate alternative pinouts for Olimex H103/H405 pcb
-ifeq ($(OLIMEX_STM32),true)
+# Activate alternative pinouts and set CPU for board type
+BOARD ?= ORIGINAL
+ifeq ($(BOARD),ORIGINAL)
+	# nothing special
+else ifeq ($(BOARD),OLIMEX_H103)
 	PROJECT_CONFIGURATION += -DOLIMEX_STM32
+else ifeq ($(BOARD),OLIMEX_H405)
+	PROJECT_CONFIGURATION += -DOLIMEX_STM32
+	USE_F4XX = TRUE
+else
+	$(error Invalid BOARD='$(BOARD)')
 endif
 
 # System specifications
-ifneq ($(H405),true)
+ifneq ($(USE_F4XX),TRUE)
 F_CRYSTAL      = 8000000L
 F_CPU          = 72000000L
 SYSCLOCK       = SYSCLK_FREQ_72MHz
@@ -36,6 +44,7 @@ FAMILY         = f10x
 DENSITY        = md
 MEMORY_MODE    = flash
 APPLICATION    = TRUE
+WAVOPTS        =
 else
 F_CRYSTAL      = 8000000L
 F_CPU          = 168000000L
@@ -44,8 +53,10 @@ FAMILY         = f4xx
 
 APPLICATION_LARGE = TRUE
 TOOLCHAIN_PATH ?= /usr/local/arm-4.8.3/
+WAVOPTS        = -t stm32f4
 endif
 # USB            = enabled
+
 BOOTLOADER     = braids_bootloader
 
 # Preferred upload command
@@ -61,5 +72,5 @@ include stmlib/makefile.inc
 # Rule for building the firmware update file
 wav:  $(TARGET_BIN)
 	python stm_audio_bootloader/qpsk/encoder.py \
-		-s 48000 -b 12000 -c 6000 -p 256 \
+		$(WAVOPTS) -s 48000 -b 12000 -c 6000 -p 256 \
 		$(TARGET_BIN)

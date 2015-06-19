@@ -28,7 +28,7 @@
 
 #include "braids/drivers/internal_adc.h"
 
-#include "../platform.h"
+#include "braids/drivers//platform.h"
 
 namespace braids {
   

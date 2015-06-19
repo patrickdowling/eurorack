@@ -34,7 +34,11 @@ void System::Init(uint32_t timer_period, bool application) {
   SystemInit();
   
   if (application) {
+#ifndef STM32F4XX
     NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x4000);
+#else
+    NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x8000);
+#endif
   }
 
 #ifndef STM32F4XX
@@ -45,12 +49,13 @@ void System::Init(uint32_t timer_period, bool application) {
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 #else
-
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC, ENABLE);
-  RCC_AHB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+  // ADC1, DMA1 if internal ADC required
 #endif
 
   TIM_TimeBaseInitTypeDef timer_init;
+  TIM_TimeBaseStructInit(&timer_init);
   timer_init.TIM_Period = timer_period;
   timer_init.TIM_Prescaler = 0;
   timer_init.TIM_ClockDivision = TIM_CKD_DIV1;
@@ -58,25 +63,23 @@ void System::Init(uint32_t timer_period, bool application) {
   timer_init.TIM_RepetitionCounter = 0;
   TIM_InternalClockConfig(TIM1);
   TIM_TimeBaseInit(TIM1, &timer_init);
-  TIM_Cmd(TIM1, ENABLE);
   
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);  // 2.2 priority split.
   
   // DAC interrupt is given highest priority
   NVIC_InitTypeDef timer_interrupt;
-#ifndef STM32F4XX
-  timer_interrupt.NVIC_IRQChannel = TIM1_UP_IRQn;
-#else
-  timer_interrupt.NVIC_IRQChannel = TIM1_UP_TIM10_IRQn;
-#endif
+  timer_interrupt.NVIC_IRQChannel = PLATFORM_TIM1_UP_IRQn;
   timer_interrupt.NVIC_IRQChannelPreemptionPriority = 0;
   timer_interrupt.NVIC_IRQChannelSubPriority = 0;
   timer_interrupt.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&timer_interrupt);
+
+  TIM_ClearITPendingBit(TIM1, TIM_IT_Update);
+  TIM_ITConfig(TIM1, TIM_IT_Update, ENABLE);  
 }
 
 void System::StartTimers() {
-  TIM_ITConfig(TIM1, TIM_IT_Update, ENABLE);  
+  TIM_Cmd(TIM1, ENABLE);
   SysTick_Config(F_CPU / 1000);
 }
 

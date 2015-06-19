@@ -36,20 +36,20 @@ namespace braids {
 
 #ifndef OLIMEX_STM32
 #define GPIO_DISP_SER GPIOB
-const uint16_t kPinClk = GPIO_Pin_11;
-const uint16_t kPinData = GPIO_Pin_1;
+const gpio_pin_t kPinClk = GPIO_Pin_11;
+const gpio_pin_t kPinData = GPIO_Pin_1;
 #define GPIO_DISP_CTRL GPIOB
-const uint16_t kPinEnable = GPIO_Pin_10;
+const gpio_pin_t kPinEnable = GPIO_Pin_10;
 #else
 // To try and support SPI3 on H405, use GPIOC:10 for clk, GPIOC:12 for data
 #define GPIO_DISP_SER GPIOC
-const uint16_t kPinClk = GPIO_Pin_10;
-const uint16_t kPinData = GPIO_Pin_12;
+const gpio_pin_t kPinClk = GPIO_Pin_10;
+const gpio_pin_t kPinData = GPIO_Pin_12;
 #define GPIO_DISP_CTRL GPIOB
-const uint16_t kPinEnable = GPIO_Pin_1;
+const gpio_pin_t kPinEnable = GPIO_Pin_1;
 #endif
 
-const uint16_t kCharacterEnablePins[] = {
+const gpio_pin_t kCharacterEnablePins[] = {
   GPIO_Pin_5,
   GPIO_Pin_6,
   GPIO_Pin_7,
@@ -75,10 +75,11 @@ void Display::Init() {
   GPIO_Init(GPIO_DISP_CTRL, &gpio_init);
 
   gpio_init.GPIO_Pin = kPinClk | kPinData;
-  gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
 #ifndef STM32F4XX
+  gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
 #else
+  gpio_init.GPIO_Speed = GPIO_Speed_25MHz; // \sa clouds/drivers/leds.cc
   gpio_init.GPIO_Mode = GPIO_Mode_OUT;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -109,6 +110,7 @@ void Display::Print(const char* s) {
   strncpy(buffer_, s, kDisplayWidth);
 }
 
+#ifndef STM32F4XX
 void Display::Shift14SegmentsWord(uint16_t data) {
   GPIO_RESET(GPIO_DISP_CTRL,kPinEnable);
   for (uint16_t i = 0; i < 16; ++i) {
@@ -123,5 +125,25 @@ void Display::Shift14SegmentsWord(uint16_t data) {
   }
   GPIO_SET(GPIO_DISP_CTRL,kPinEnable);
 }
+#else
+// Looks like the fast register setting version is too fast, so there's
+// garbage characters displays. The garbage is consistent but still...
+// In anticipation that there might be a hardware SPI version this is a
+// duplicate using the "slow" function call GPIO set/reset.
+void Display::Shift14SegmentsWord(uint16_t data) {
+  GPIO_WriteBit(GPIO_DISP_CTRL,kPinEnable, Bit_RESET);
+  for (uint16_t i = 0; i < 16; ++i) {
+    GPIO_WriteBit(GPIO_DISP_SER,kPinClk, Bit_RESET);
+    if (data & 1) {
+      GPIO_WriteBit(GPIO_DISP_SER,kPinData, Bit_SET);
+    } else {
+      GPIO_WriteBit(GPIO_DISP_SER,kPinData, Bit_RESET);
+    }
+    data >>= 1;
+    GPIO_WriteBit(GPIO_DISP_SER,kPinClk, Bit_SET);
+  }
+  GPIO_WriteBit(GPIO_DISP_CTRL,kPinEnable, Bit_SET);
+}
+#endif
 
 }  // namespace braids

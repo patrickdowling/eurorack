@@ -48,6 +48,7 @@ void UartLogger::Init(uint32_t baud_rate) {
 
 #ifdef STM32F4XX
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 #endif
 
   // Initialize USART.

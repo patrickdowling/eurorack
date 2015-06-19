@@ -22,8 +22,21 @@
 # 
 # See http://creativecommons.org/licenses/MIT/ for more information.
 
+# Activate alternative pinouts and set CPU for board type
+BOARD ?= ORIGINAL
+ifeq ($(BOARD),ORIGINAL)
+	# nothing special
+else ifeq ($(BOARD),OLIMEX_H103)
+	PROJECT_CONFIGURATION += -DOLIMEX_STM32
+else ifeq ($(BOARD),OLIMEX_H405)
+	PROJECT_CONFIGURATION += -DOLIMEX_STM32
+	USE_F4XX = TRUE
+else
+	$(error Invalid BOARD='$(BOARD)')
+endif
+
 # System specifications
-ifneq ($(H405),true)
+ifneq ($(USE_F4XX),TRUE)
 F_CRYSTAL      = 8000000L
 F_CPU          = 72000000L
 SYSCLOCK       = SYSCLK_FREQ_72MHz
