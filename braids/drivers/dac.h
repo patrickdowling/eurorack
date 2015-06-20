@@ -32,6 +32,15 @@
 #include "platform.h"
 #include "stmlib/stmlib.h"
 
+#define DAC_USE_DMA_DISABLED
+
+#ifdef DAC_USE_DMA
+// channel:stream see stm32f4xx reference 10.3.3
+#define DAC_DMA_CLOCK RCC_AHB1Periph_DMA1
+#define DAC_DMA_STREAM  DMA1_Stream4
+#define DAC_DMA_CHANNEL DMA_Channel_0
+#endif
+
 namespace braids {
 
 class Dac {
@@ -40,6 +49,20 @@ class Dac {
   ~Dac() { }
   
   void Init();
+
+#ifdef DAC_USE_DMA
+  inline void Write(uint16_t value) {
+    GPIO_SET(GPIOB,GPIO_Pin_12);
+    DMA_Cmd(DAC_DMA_STREAM, DISABLE);
+    GPIO_RESET(GPIOB,GPIO_Pin_12);
+
+    dma_buffer_[0] = value >> 8;
+    dma_buffer_[1] = value << 8;
+
+    DMA_SetCurrDataCounter(DAC_DMA_STREAM, 2);
+    DMA_Cmd(DAC_DMA_STREAM, ENABLE);
+  }
+#else
   inline void Write(uint16_t value) {
     GPIO_SET(GPIOB,GPIO_Pin_12);
     GPIO_RESET(GPIOB,GPIO_Pin_12);
@@ -62,8 +85,14 @@ class Dac {
     __asm__("nop");
     SPI2->DR = value << 8;
   }
+ #endif
  
  private:
+
+#ifdef DAC_USE_DMA
+  DMA_InitTypeDef dma_init_tx_;
+  uint16_t dma_buffer_[2];
+#endif
   
   DISALLOW_COPY_AND_ASSIGN(Dac);
 };

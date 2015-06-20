@@ -81,6 +81,38 @@ void Dac::Init() {
   spi_init.SPI_CRCPolynomial = 7;
   SPI_Init(SPI2, &spi_init);
   SPI_Cmd(SPI2, ENABLE);
+
+#ifdef STM32F4XX
+#ifdef DAC_USE_DMA
+  dma_buffer_[0] = dma_buffer_[1] = 32768;
+
+  RCC_AHB1PeriphClockCmd(DAC_DMA_CLOCK, ENABLE);
+
+  DMA_Cmd(DAC_DMA_STREAM, DISABLE);
+  DMA_DeInit(DAC_DMA_STREAM);
+
+  dma_init_tx_.DMA_Channel = DAC_DMA_CHANNEL;
+  dma_init_tx_.DMA_PeripheralBaseAddr = (uint32_t)&SPI2->DR;
+  dma_init_tx_.DMA_Memory0BaseAddr = (uint32_t)dma_buffer_;
+  dma_init_tx_.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+  dma_init_tx_.DMA_BufferSize = 2;
+  dma_init_tx_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  dma_init_tx_.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  dma_init_tx_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+  dma_init_tx_.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
+  dma_init_tx_.DMA_Mode = DMA_Mode_Normal;
+  dma_init_tx_.DMA_Priority = DMA_Priority_VeryHigh;
+  dma_init_tx_.DMA_FIFOMode = DMA_FIFOMode_Disable;
+  dma_init_tx_.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
+  dma_init_tx_.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+  dma_init_tx_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+  DMA_Init(DAC_DMA_STREAM, &dma_init_tx_);
+
+  SPI_I2S_DMACmd(SPI2, SPI_I2S_DMAReq_Tx, ENABLE);
+  DMA_Cmd(DAC_DMA_STREAM, ENABLE);
+
+#endif
+#endif
 }
 
 }  // namespace braids
