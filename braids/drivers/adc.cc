@@ -74,9 +74,9 @@ void Adc::Init(bool double_speed) {
 
 #ifdef STM32F4XX
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_SPI1); // SPI1_SCK
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_SPI1); // SPI1_MISO
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_SPI1); // SPI1_MOSI
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1); // SPI1_SCK
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_SPI1); // SPI1_MISO
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1); // SPI1_MOSI
 #endif
   
   // Initialize SPI
