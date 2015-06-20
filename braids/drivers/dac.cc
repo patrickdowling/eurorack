@@ -52,7 +52,6 @@ void Dac::Init() {
 #ifndef STM32F4XX
   gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
 #else
-  gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_AF;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -64,10 +63,14 @@ void Dac::Init() {
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_SPI2); // SPI2_SCK
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_SPI2); // SPI2_MOSI
 #endif
-  
+
   // Initialize SPI
   SPI_InitTypeDef spi_init;
+#ifdef STM32F4XX
+  spi_init.SPI_Direction = SPI_Direction_1Line_Tx;
+#else
   spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+#endif
   spi_init.SPI_Mode = SPI_Mode_Master;
   spi_init.SPI_DataSize = SPI_DataSize_16b;
   spi_init.SPI_CPOL = SPI_CPOL_High;
