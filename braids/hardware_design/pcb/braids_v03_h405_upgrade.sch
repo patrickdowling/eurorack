@@ -20636,16 +20636,16 @@ without a left-over airwire.</text>
 </net>
 <net name="PARAM2_CV" class="0">
 <segment>
-<pinref part="MCU1" gate="G$1" pin="PC2"/>
-<wire x1="-45.72" y1="101.6" x2="-43.18" y2="101.6" width="0.1524" layer="91"/>
-<label x="-43.18" y="101.6" size="1.778" layer="95"/>
+<pinref part="MCU1" gate="G$1" pin="PB1"/>
+<wire x1="-45.72" y1="139.7" x2="-43.18" y2="139.7" width="0.1524" layer="91"/>
+<label x="-43.18" y="139.7" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="GATE" class="0">
 <segment>
-<pinref part="MCU1" gate="G$1" pin="PC4"/>
-<wire x1="-45.72" y1="96.52" x2="-43.18" y2="96.52" width="0.1524" layer="91"/>
-<label x="-43.18" y="96.52" size="1.778" layer="95"/>
+<pinref part="MCU1" gate="G$1" pin="PC2"/>
+<wire x1="-45.72" y1="101.6" x2="-43.18" y2="101.6" width="0.1524" layer="91"/>
+<label x="-43.18" y="101.6" size="1.778" layer="95"/>
 </segment>
 </net>
 </nets>
