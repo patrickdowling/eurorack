@@ -132,13 +132,13 @@
 <text x="70.485" y="15.875" size="1.016" layer="26" font="vector" ratio="15" rot="MR0">-12V</text>
 <text x="70.485" y="23.495" size="1.016" layer="26" font="vector" ratio="15" rot="MR0">GND</text>
 <text x="4.1275" y="74.295" size="3.81" layer="25" font="vector" ratio="15">Plaits</text>
-<text x="76.5175" y="30.7975" size="1.016" layer="25" font="vector" ratio="15" rot="R90">Plaits v0.1 cc-by-sa Patrick Dowling, 2015
+<text x="76.5175" y="30.7975" size="1.016" layer="25" font="vector" ratio="15" rot="R90">Plaits v0.2 cc-by-sa Patrick Dowling, 2015
 Based on Braids by Olivier Gillet</text>
 <text x="76.5175" y="13.97" size="1.27" layer="26" font="vector" ratio="12" rot="MR270">Red stripe &gt;</text>
 <text x="70.485" y="20.955" size="1.016" layer="26" font="vector" ratio="15" rot="MR0">GND</text>
 <text x="70.485" y="18.415" size="1.016" layer="26" font="vector" ratio="15" rot="MR0">GND</text>
 <text x="20.955" y="73.9775" size="3.81" layer="26" font="vector" ratio="15" rot="MR0">Plaits</text>
-<text x="73.9775" y="30.7975" size="1.016" layer="26" font="vector" ratio="15" rot="MR90">Plaits v0.1 cc-by-sa Patrick Dowling, 2015
+<text x="73.9775" y="30.7975" size="1.016" layer="26" font="vector" ratio="15" rot="MR90">Plaits v0.2 cc-by-sa Patrick Dowling, 2015
 Based on Braids by Olivier Gillet</text>
 <text x="47.625" y="52.3875" size="0.8128" layer="25" font="vector" rot="R180">DEBUG_PIN</text>
 <text x="47.625" y="49.8475" size="0.8128" layer="25" font="vector" rot="R180">UART_TX</text>
@@ -1782,8 +1782,8 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <element name="J1" library="og-pj301" package="WQP_PJ_301M6" value="PJ301_THONKICONN6" x="6.35" y="6.35" smashed="yes" rot="R90">
 <attribute name="NAME" x="6.295" y="11.0325" size="1.016" layer="25"/>
 </element>
-<element name="J6" library="og-pj301" package="WQP_PJ_301M6" value="PJ301_THONKICONN6" x="72.39" y="6.985" locked="yes" smashed="yes" rot="R180">
-<attribute name="NAME" x="67.7075" y="3.755" size="1.016" layer="25" rot="R90"/>
+<element name="J6" library="og-pj301" package="WQP_PJ_301M6" value="PJ301_THONKICONN6" x="72.39" y="6.35" locked="yes" smashed="yes" rot="R180">
+<attribute name="NAME" x="67.7075" y="3.12" size="1.016" layer="25" rot="R90"/>
 </element>
 <element name="J4" library="og-pj301" package="WQP_PJ_301M6" value="PJ301_THONKICONN6" x="44.45" y="6.35" smashed="yes" rot="R90">
 <attribute name="NAME" x="44.395" y="11.0325" size="1.016" layer="25"/>
@@ -3197,8 +3197,8 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <contactref element="R44" pad="1"/>
 <contactref element="J6" pad="P3"/>
 <wire x1="67.31" y1="11.1125" x2="69.85" y2="8.5725" width="0.254" layer="1"/>
-<wire x1="69.85" y1="8.5725" x2="69.85" y2="5.08" width="0.254" layer="1"/>
-<wire x1="69.85" y1="5.08" x2="72.39" y2="2.54" width="0.254" layer="1"/>
+<wire x1="69.85" y1="8.5725" x2="69.85" y2="4.445" width="0.254" layer="1"/>
+<wire x1="69.85" y1="4.445" x2="72.39" y2="1.905" width="0.254" layer="1"/>
 <wire x1="50.8" y1="13.9725" x2="50.8" y2="13.0175" width="0.254" layer="1"/>
 <wire x1="50.8" y1="13.0175" x2="51.1175" y2="12.7" width="0.254" layer="1"/>
 <wire x1="51.1175" y1="12.7" x2="54.61" y2="12.7" width="0.254" layer="1"/>
