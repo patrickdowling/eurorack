@@ -52,9 +52,9 @@ class Dac {
 
 #ifdef DAC_USE_DMA
   inline void Write(uint16_t value) {
-    GPIO_SET(GPIOB,GPIO_Pin_12);
+    GPIO_SET(GPIOA, kPinSS);
     DMA_Cmd(DAC_DMA_STREAM, DISABLE);
-    GPIO_RESET(GPIOB,GPIO_Pin_12);
+    GPIO_RESET(GPIOA, kPinSS);
 
     dma_buffer_[0] = value >> 8;
     dma_buffer_[1] = value << 8;
@@ -64,8 +64,8 @@ class Dac {
   }
 #else
   inline void Write(uint16_t value) {
-    GPIO_SET(GPIOB,GPIO_Pin_12);
-    GPIO_RESET(GPIOB,GPIO_Pin_12);
+    GPIO_SET(GPIOA, kPinSS);
+    GPIO_RESET(GPIOA, kPinSS);
     SPI2->DR = value >> 8;
     __asm__("nop");
     __asm__("nop");
@@ -88,6 +88,8 @@ class Dac {
  #endif
  
  private:
+
+  static const gpio_pin_t kPinSS = GPIO_Pin_6; // PA6
 
 #ifdef DAC_USE_DMA
   DMA_InitTypeDef dma_init_tx_;

@@ -35,6 +35,7 @@ namespace braids {
 const gpio_pin_t kPinSS = GPIO_Pin_0;
 
 void Adc::Init(bool double_speed) {
+#if 0
   // Initialize SS pin.
   GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = kPinSS;
@@ -93,6 +94,7 @@ void Adc::Init(bool double_speed) {
   SPI_Init(SPI1, &spi_init);
   GPIO_SetBits(GPIOB, kPinSS);
   SPI_Cmd(SPI1, ENABLE);
+#endif
   
   rx_word_ = 0;
   active_channel_ = 0;
@@ -101,6 +103,7 @@ void Adc::Init(bool double_speed) {
 }
 
 bool Adc::PipelinedRead(uint8_t channel) {
+#if 0
   switch (acquisition_stage_) {
     case 0:
       rx_word_ |= SPI_I2S_ReceiveData(SPI1);
@@ -124,12 +127,13 @@ bool Adc::PipelinedRead(uint8_t channel) {
       acquisition_stage_ = 0;
       break;
   }
+#endif
   return acquisition_stage_ == 1;
 }
 
 uint16_t Adc::Read(uint8_t channel) {
   uint16_t value = 0;
-  
+#if 0
   // Send header
   GPIO_ResetBits(GPIOB, kPinSS);
   SPI_I2S_SendData(SPI1, 0x04 | 0x02);
@@ -147,6 +151,7 @@ uint16_t Adc::Read(uint8_t channel) {
   value |= SPI_I2S_ReceiveData(SPI1);
   
   GPIO_SetBits(GPIOB, kPinSS);
+#endif
   return value;
 }
 

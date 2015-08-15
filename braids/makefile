@@ -22,13 +22,8 @@
 # 
 # See http://creativecommons.org/licenses/MIT/ for more information.
 
-# Activate alternative pinouts and set CPU for board type
-BOARD ?= ORIGINAL
-ifeq ($(BOARD),ORIGINAL)
-	# nothing special
-else ifeq ($(BOARD),OLIMEX_H103)
-	PROJECT_CONFIGURATION += -DOLIMEX_STM32
-else ifeq ($(BOARD),OLIMEX_H405)
+BOARD ?= OLIMEX_H405
+ifeq ($(BOARD),OLIMEX_H405)
 	PROJECT_CONFIGURATION += -DOLIMEX_STM32
 	USE_F4XX = TRUE
 else
@@ -36,16 +31,7 @@ else
 endif
 
 # System specifications
-ifneq ($(USE_F4XX),TRUE)
-F_CRYSTAL      = 8000000L
-F_CPU          = 72000000L
-SYSCLOCK       = SYSCLK_FREQ_72MHz
-FAMILY         = f10x
-DENSITY        = md
-MEMORY_MODE    = flash
-APPLICATION    = TRUE
-WAVOPTS        =
-else
+ifeq ($(USE_F4XX),TRUE)
 F_CRYSTAL      = 8000000L
 F_CPU          = 168000000L
 SYSCLOCK       = SYSCLK_FREQ_168MHz
@@ -54,6 +40,8 @@ FAMILY         = f4xx
 APPLICATION_LARGE = TRUE
 TOOLCHAIN_PATH ?= /usr/local/arm-4.8.3/
 WAVOPTS        = -t stm32f4
+else
+	$(error f4xx only)
 endif
 # USB            = enabled
 

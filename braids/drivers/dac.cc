@@ -31,46 +31,33 @@
 #include <string.h>
 
 namespace braids {
-  
+
 void Dac::Init() {
   // Initialize SS pin.
   GPIO_InitTypeDef gpio_init;
-  gpio_init.GPIO_Pin = GPIO_Pin_12;
+  gpio_init.GPIO_Pin = kPinSS;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-#ifndef STM32F4XX
-  gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
-#else
   gpio_init.GPIO_Mode = GPIO_Mode_OUT;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#endif
-  GPIO_Init(GPIOB, &gpio_init);
+  GPIO_Init(GPIOA, &gpio_init);
   
   // Initialize MOSI and SCK pins.
   gpio_init.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_15;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-#ifndef STM32F4XX
-  gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
-#else
   gpio_init.GPIO_Mode = GPIO_Mode_AF;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#endif
   GPIO_Init(GPIOB, &gpio_init);
 
-#ifdef STM32F4XX
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_SPI2); // SPI2_SCK
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_SPI2); // SPI2_MOSI
-#endif
 
   // Initialize SPI
   SPI_InitTypeDef spi_init;
-#ifdef STM32F4XX
   spi_init.SPI_Direction = SPI_Direction_1Line_Tx;
-#else
-  spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-#endif
+//  spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
   spi_init.SPI_Mode = SPI_Mode_Master;
   spi_init.SPI_DataSize = SPI_DataSize_16b;
   spi_init.SPI_CPOL = SPI_CPOL_High;
@@ -82,7 +69,6 @@ void Dac::Init() {
   SPI_Init(SPI2, &spi_init);
   SPI_Cmd(SPI2, ENABLE);
 
-#ifdef STM32F4XX
 #ifdef DAC_USE_DMA
   dma_buffer_[0] = dma_buffer_[1] = 32768;
 
@@ -111,7 +97,6 @@ void Dac::Init() {
   SPI_I2S_DMACmd(SPI2, SPI_I2S_DMAReq_Tx, ENABLE);
   DMA_Cmd(DAC_DMA_STREAM, ENABLE);
 
-#endif
 #endif
 }
 

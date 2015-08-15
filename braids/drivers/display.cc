@@ -34,59 +34,41 @@
 
 namespace braids {
 
-#ifndef OLIMEX_STM32
-#define GPIO_DISP_SER GPIOB
-const gpio_pin_t kPinClk = GPIO_Pin_11;
-const gpio_pin_t kPinData = GPIO_Pin_1;
-#define GPIO_DISP_CTRL GPIOB
+#define GPIO_DISP_SPI GPIOA
+const gpio_pin_t kPinClk = GPIO_Pin_8;
+const gpio_pin_t kPinData = GPIO_Pin_9;
 const gpio_pin_t kPinEnable = GPIO_Pin_10;
-#else
-// To try and support SPI3 on H405, use GPIOC:10 for clk, GPIOC:12 for data
-#define GPIO_DISP_SER GPIOC
-const gpio_pin_t kPinClk = GPIO_Pin_10;
-const gpio_pin_t kPinData = GPIO_Pin_12;
-#define GPIO_DISP_CTRL GPIOB
-const gpio_pin_t kPinEnable = GPIO_Pin_1;
-#endif
 
+#define GPIO_DISP_CHAR GPIOB
 const gpio_pin_t kCharacterEnablePins[] = {
-  GPIO_Pin_5,
-  GPIO_Pin_6,
-  GPIO_Pin_7,
-  GPIO_Pin_8
+  GPIO_Pin_13,
+  GPIO_Pin_15,
+  GPIO_Pin_12,
+  GPIO_Pin_14
 };
 
 void Display::Init() {
   GPIO_InitTypeDef gpio_init;
-  gpio_init.GPIO_Pin = kPinEnable;
-  gpio_init.GPIO_Pin |= kCharacterEnablePins[0];
+  gpio_init.GPIO_Pin = kCharacterEnablePins[0];
   gpio_init.GPIO_Pin |= kCharacterEnablePins[1];
   gpio_init.GPIO_Pin |= kCharacterEnablePins[2];
   gpio_init.GPIO_Pin |= kCharacterEnablePins[3];
   
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-#ifndef STM32F4XX
-  gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
-#else
   gpio_init.GPIO_Mode = GPIO_Mode_OUT;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#endif
-  GPIO_Init(GPIO_DISP_CTRL, &gpio_init);
+  GPIO_Init(GPIO_DISP_CHAR, &gpio_init);
 
   gpio_init.GPIO_Pin = kPinClk | kPinData;
-#ifndef STM32F4XX
-  gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-  gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
-#else
+  gpio_init.GPIO_Pin |= kPinEnable;
   gpio_init.GPIO_Speed = GPIO_Speed_25MHz; // \sa clouds/drivers/leds.cc
   gpio_init.GPIO_Mode = GPIO_Mode_OUT;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#endif
-  GPIO_Init(GPIO_DISP_SER, &gpio_init);
+  GPIO_Init(GPIO_DISP_SPI, &gpio_init);
 
-  GPIO_SET(GPIO_DISP_CTRL,kPinEnable);
+  GPIO_SET(GPIO_DISP_SPI, kPinEnable);
   active_position_ = 0;
   brightness_pwm_cycle_ = 0;
   brightness_ = 3;
@@ -95,13 +77,13 @@ void Display::Init() {
 
 void Display::Refresh() {
   if (brightness_pwm_cycle_ <= brightness_) {
-    GPIO_RESET(GPIO_DISP_CTRL,kCharacterEnablePins[active_position_]);
+    GPIO_RESET(GPIO_DISP_CHAR, kCharacterEnablePins[active_position_]);
     active_position_ = (active_position_ + 1) % kDisplayWidth;
     Shift14SegmentsWord(chr_characters[
         static_cast<uint8_t>(buffer_[active_position_])]);
-    GPIO_SET(GPIO_DISP_CTRL,kCharacterEnablePins[active_position_]);
+    GPIO_SET(GPIO_DISP_CHAR, kCharacterEnablePins[active_position_]);
   } else {
-    GPIO_RESET(GPIO_DISP_CTRL,kCharacterEnablePins[active_position_]);
+    GPIO_RESET(GPIO_DISP_CHAR, kCharacterEnablePins[active_position_]);
   }
   brightness_pwm_cycle_ = (brightness_pwm_cycle_ + 1) % kBrightnessLevels;
 }
@@ -112,18 +94,18 @@ void Display::Print(const char* s) {
 
 #ifndef STM32F4XX
 void Display::Shift14SegmentsWord(uint16_t data) {
-  GPIO_RESET(GPIO_DISP_CTRL,kPinEnable);
+  GPIO_RESET(GPIO_DISP_SPI, kPinEnable);
   for (uint16_t i = 0; i < 16; ++i) {
-    GPIO_RESET(GPIO_DISP_SER,kPinClk);
+    GPIO_RESET(GPIO_DISP_SPI, kPinClk);
     if (data & 1) {
-      GPIO_SET(GPIO_DISP_SER,kPinData);
+      GPIO_SET(GPIO_DISP_SPI, kPinData);
     } else {
-      GPIO_RESET(GPIO_DISP_SER,kPinData);
+      GPIO_RESET(GPIO_DISP_SPI, kPinData);
     }
     data >>= 1;
-    GPIO_SET(GPIO_DISP_SER,kPinClk);
+    GPIO_SET(GPIO_DISP_SPI, kPinClk);
   }
-  GPIO_SET(GPIO_DISP_CTRL,kPinEnable);
+  GPIO_SET(GPIO_DISP_SPI, kPinEnable);
 }
 #else
 // Looks like the fast register setting version is too fast, so there's
@@ -131,18 +113,18 @@ void Display::Shift14SegmentsWord(uint16_t data) {
 // In anticipation that there might be a hardware SPI version this is a
 // duplicate using the "slow" function call GPIO set/reset.
 void Display::Shift14SegmentsWord(uint16_t data) {
-  GPIO_WriteBit(GPIO_DISP_CTRL,kPinEnable, Bit_RESET);
+  GPIO_WriteBit(GPIO_DISP_SPI, kPinEnable, Bit_RESET);
   for (uint16_t i = 0; i < 16; ++i) {
-    GPIO_WriteBit(GPIO_DISP_SER,kPinClk, Bit_RESET);
+    GPIO_WriteBit(GPIO_DISP_SPI, kPinClk, Bit_RESET);
     if (data & 1) {
-      GPIO_WriteBit(GPIO_DISP_SER,kPinData, Bit_SET);
+      GPIO_WriteBit(GPIO_DISP_SPI, kPinData, Bit_SET);
     } else {
-      GPIO_WriteBit(GPIO_DISP_SER,kPinData, Bit_RESET);
+      GPIO_WriteBit(GPIO_DISP_SPI, kPinData, Bit_RESET);
     }
     data >>= 1;
-    GPIO_WriteBit(GPIO_DISP_SER,kPinClk, Bit_SET);
+    GPIO_WriteBit(GPIO_DISP_SPI, kPinClk, Bit_SET);
   }
-  GPIO_WriteBit(GPIO_DISP_CTRL,kPinEnable, Bit_SET);
+  GPIO_WriteBit(GPIO_DISP_SPI, kPinEnable, Bit_SET);
 }
 #endif
 

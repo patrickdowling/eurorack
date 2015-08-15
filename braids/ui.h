@@ -35,6 +35,7 @@
 
 #include "braids/drivers/display.h"
 #include "braids/drivers/encoder.h"
+#include "braids/drivers/switches.h"
 #include "braids/settings.h"
 
 namespace braids {
@@ -46,6 +47,11 @@ enum UiMode {
   MODE_CALIBRATION_STEP_1,
   MODE_CALIBRATION_STEP_2,
   MODE_MARQUEE_EDITOR
+};
+
+enum SwitchIndex {
+  SWITCH_S1,
+  SWITCH_GATE,
 };
 
 class Ui {
@@ -102,6 +108,7 @@ class Ui {
   void OnClick();
   void OnLongClick();
   void RefreshDisplay();
+  void OnSwitchPressed(const stmlib::Event &e);
 
   stmlib::EventQueue<16> queue_;
   
@@ -117,6 +124,7 @@ class Ui {
   
   Display display_;
   Encoder encoder_;
+  Switches switches_;
   
   int16_t dac_code_c2_;
   int16_t cv_[4];

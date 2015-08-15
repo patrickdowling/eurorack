@@ -1,6 +1,6 @@
-// Copyright 2012 Olivier Gillet.
+// Copyright 2015 Patrick Dowling.
 //
-// Author: Olivier Gillet (ol.gillet@gmail.com)
+// Author: Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,51 +24,53 @@
 //
 // -----------------------------------------------------------------------------
 //
-// Driver for gate input.
+// Driver for the front panel switches.
+// Shamelessly borrowed from the rest of the pichenettes/eurorack codebase
 
-#ifndef BRAIDS_DRIVERS_GATE_INPUT_H_
-#define BRAIDS_DRIVERS_GATE_INPUT_H_
+#ifndef BRAIDS_DRIVERS_SWITCHES_H_
+#define BRAIDS_DRIVERS_SWITCHES_H_
 
-#include "braids/drivers/platform.h"
 #include "stmlib/stmlib.h"
+#include "braids/drivers/platform.h"
 
 namespace braids {
 
-class GateInput {
- public:
-  GateInput() { }
-  ~GateInput() { }
-  
+const uint8_t kNumSwitches = 2;
+
+class Switches {
+public:
+  Switches() { }
+  ~Switches() { }
+
   void Init();
-  
-  inline bool Read() {
-    return !(GPIOA->IDR & kPinGate);
-  }
-  
-  inline bool raised() {
-    bool new_state = Read();
-    bool rising_edge = (!previous_state_ && new_state);
-    previous_state_ = new_state;
-    return rising_edge;
+  void Debounce();
+
+  inline bool released(int index) const {
+    return switch_state_[index] == 0x7f;
   }
 
-  inline bool lowered() {
-    bool new_state = Read();
-    bool falling_edge = (previous_state_ && !new_state);
-    previous_state_ = new_state;
-    return falling_edge;
+  inline bool just_pressed(int index) const {
+    return switch_state_[index] == 0x80;
   }
-  
-  inline bool state() { return previous_state_; }
- 
- private:
-  bool previous_state_;
-  
-  static const gpio_pin_t kPinGate = GPIO_Pin_2; // PC2
 
-  DISALLOW_COPY_AND_ASSIGN(GateInput);
+  inline bool pressed(int index) const {
+    return switch_state_[index] == 0x00;
+  }
+
+  inline bool pressed_immediate(int index) const {
+    switch (index) {
+      case 0: return !GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_11);
+      case 1: return !GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_5);
+      default: return false;
+    }
+  }
+
+private:
+  uint8_t switch_state_[kNumSwitches];
+
+  DISALLOW_COPY_AND_ASSIGN(Switches);
 };
 
-}  // namespace braids
+}; // namespace braids
 
-#endif  // BRAIDS_DRIVERS_GATE_INPUT_H_
+#endif // BRAIDS_DRIVERS_SWITCHES_H_

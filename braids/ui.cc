@@ -41,6 +41,7 @@ const uint32_t kEncoderLongPressTime = 800;
 void Ui::Init() {
   encoder_.Init();
   display_.Init();
+  switches_.Init();
   queue_.Init();
   sub_clock_ = 0;
   value_ = 0;
@@ -72,7 +73,14 @@ void Ui::Poll() {
   if (increment != 0) {
     queue_.AddEvent(CONTROL_ENCODER, 0, increment);
   }
-  
+
+  switches_.Debounce();
+  for (int i = 0; i < kNumSwitches; ++i) {
+    if (switches_.just_pressed(i)) {
+      queue_.AddEvent(CONTROL_SWITCH, i, 0);
+    }
+  }
+
   if ((sub_clock_ & 1) == 0) {
     display_.Refresh();
   }
@@ -283,6 +291,14 @@ void Ui::OnIncrement(const Event& e) {
   }
 }
 
+void Ui::OnSwitchPressed(const stmlib::Event &e) {
+  switch (static_cast<SwitchIndex>(e.control_id)){
+    case SWITCH_S1: break;
+    case SWITCH_GATE: break;
+    default: break;
+  }
+}
+
 void Ui::DoEvents() {
   bool refresh_display_ = false;
   while (queue_.available()) {
@@ -293,6 +309,10 @@ void Ui::DoEvents() {
       OnLongClick();
     } else if (e.control_type == CONTROL_ENCODER) {
       OnIncrement(e);
+    } else if (e.control_type == CONTROL_SWITCH) {
+      if (e.data == 0) {
+        OnSwitchPressed(e);
+      }
     }
     refresh_display_ = true;
   }

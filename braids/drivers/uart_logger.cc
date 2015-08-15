@@ -32,24 +32,20 @@
 
 namespace braids {
 
+static const gpio_pin_t kPinUart = GPIO_Pin_6;
+
 void UartLogger::Init(uint32_t baud_rate) {
   // Initialize TX pin.
   GPIO_InitTypeDef gpio_init;
-  gpio_init.GPIO_Pin = GPIO_Pin_9;
+  gpio_init.GPIO_Pin = kPinUart;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-#ifndef STM32F4XX
-  gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
-#else
   gpio_init.GPIO_Mode = GPIO_Mode_AF;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#endif
-  GPIO_Init(GPIOA, &gpio_init);
+  GPIO_Init(GPIOB, &gpio_init);
 
-#ifdef STM32F4XX
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_USART1);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-#endif
 
   // Initialize USART.
   USART_InitTypeDef usart_init;
