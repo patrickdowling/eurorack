@@ -33,28 +33,40 @@
 
 namespace braids {
 
+enum AdcChannel {
+  ADC_VOCT_CV,
+  ADC_FM_CV,
+  ADC_PARAM1_CV,
+  ADC_PARAM2_CV,
+  ADC_PITCH_POT,
+  ADC_FINE_POT,
+  ADC_FM_POT,
+  ADC_PARAM1_POT,
+  ADC_MOD_POT,
+  ADC_PARAM2_POT,
+  ADC_CHANNEL_LAST,
+};
+
 class InternalAdc {
  public:
   InternalAdc() { }
   ~InternalAdc() { }
   
   void Init();
+  void DeInit();
+  void Convert();
   
-  inline int32_t value() {
-    if (disabled_) {
-      return 0;
-    } else {
-      int32_t v = (static_cast<int32_t>(value_) - 32768) << 8;
-      int32_t delta = v - state_;
-      state_ += (delta >> 8);
-      return state_ >> 8;
-    }
+  inline int32_t value(int channel) {
+    int32_t v = (static_cast<int32_t>(values_[channel]) - 32768) << 8;
+    int32_t delta = v - state_[channel];
+    state_[channel] += (delta >> 8);
+    return state_[channel] >> 8;
   }
   
  private:
-  bool disabled_;
-  uint16_t value_;
-  int32_t state_;
+
+  int32_t state_[ADC_CHANNEL_LAST];
+  uint16_t values_[ADC_CHANNEL_LAST];
   
   DISALLOW_COPY_AND_ASSIGN(InternalAdc);
 };

@@ -35,8 +35,8 @@ const gpio_pin_t kPinA = GPIO_Pin_7; //PC7
 const gpio_pin_t kPinB = GPIO_Pin_8; //PC8
 
 void Encoder::Init() {
-  GPIO_InitTypeDef gpio_init;
 
+  GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = kPinSwitch | kPinA | kPinB;
   gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_IN;

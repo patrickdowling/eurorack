@@ -112,7 +112,7 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
   
   bool adc_scan_cycle_complete = adc.PipelinedScan();
   if (adc_scan_cycle_complete) {
-    ui.UpdateCv(adc.channel(0), adc.channel(1), adc.channel(2), adc.channel(3));
+//    ui.UpdateCv(adc.channel(0), adc.channel(1), adc.channel(2), adc.channel(3));
     if (trigger_detected_flag) {
       trigger_delay = settings.trig_delay()
           ? (1 << settings.trig_delay()) : 0;
@@ -250,7 +250,7 @@ void RenderBlock() {
   if (!settings.meta_modulation()) {
     pitch += settings.adc_to_fm(adc.channel(3));
   }
-  pitch += internal_adc.value() >> 8;
+  pitch += internal_adc.value(0) >> 8;
   
   // Check if the pitch has changed to cause an auto-retrigger
   int32_t pitch_delta = pitch - previous_pitch;
@@ -312,6 +312,8 @@ void RenderBlock() {
   }
   render_block = (render_block + 1) % kNumBlocks;
   // debug_pin.Low();
+
+  internal_adc.Convert();
 }
 
 int main(void) {
