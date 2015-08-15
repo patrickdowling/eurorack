@@ -39,8 +39,9 @@ using namespace stmlib;
 const uint32_t kEncoderLongPressTime = 800;
 
 void Ui::Init() {
-  encoder_.Init();
   display_.Init();
+  encoder_.Init();
+  leds_.Init();
   switches_.Init();
   queue_.Init();
   sub_clock_ = 0;

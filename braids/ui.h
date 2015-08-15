@@ -35,6 +35,7 @@
 
 #include "braids/drivers/display.h"
 #include "braids/drivers/encoder.h"
+#include "braids/drivers/leds.h"
 #include "braids/drivers/switches.h"
 #include "braids/settings.h"
 
@@ -124,6 +125,7 @@ class Ui {
   
   Display display_;
   Encoder encoder_;
+  Leds leds_;
   Switches switches_;
   
   int16_t dac_code_c2_;
