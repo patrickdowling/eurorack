@@ -62,7 +62,15 @@ class InternalAdc {
     state_[channel] += (delta >> 8);
     return state_[channel] >> 8;
   }
-  
+
+  inline uint16_t raw_value(int channel) const {
+    return values_[channel];
+  }
+
+  inline const uint16_t* raw_values() {
+    return &values_[0];
+  }
+
  private:
 
   int32_t state_[ADC_CHANNEL_LAST];

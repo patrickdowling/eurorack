@@ -49,6 +49,7 @@ void Ui::Init() {
   mode_ = MODE_SPLASH;
   setting_ = SETTING_OSCILLATOR_SHAPE;
   setting_index_ = 0;
+  cv_index_ = 0;
 }
 
 void Ui::Poll() {
@@ -118,7 +119,8 @@ void Ui::RefreshDisplay() {
           char text[] = "    ";
           if (!blink_) {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
-              text[i] = '\x90' + (cv_[i] * 7 >> 12);
+              if (cv_index_ + i < ADC_CHANNEL_LAST)
+                text[i] = '\x90' + (cv_[cv_index_ + i] * 7 >> 12);
             }
           }
           display_.Print(text);
@@ -231,6 +233,10 @@ void Ui::OnClick() {
         }
       } else if (setting_ == SETTING_VERSION) {
         mode_ = MODE_SPLASH;
+      } else if (setting_ == SETTING_CV_TESTER) {
+        cv_index_ += kDisplayWidth;
+        if (cv_index_ >= ADC_CHANNEL_LAST)
+          cv_index_ = 0;
       }
       break;
       

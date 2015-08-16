@@ -31,7 +31,7 @@
 
 // TODO Single channel mode for bootloader
 // TODO Use ADC1 + ADC2 in DUAL mode, which (w|c)ould allow all channels to
-// use ADC_SampleTime_480Cycles
+// use ADC_SampleTime_480Cycles?
 
 namespace braids {
 
@@ -46,7 +46,7 @@ static const AdcChannelDesc AdcCvChannels[] = {
   { GPIOA, GPIO_Pin_3, ADC_Channel_3, ADC_SampleTime_480Cycles }, // PA3, ADC_VOCT_CV
   { GPIOA, GPIO_Pin_1, ADC_Channel_1, ADC_SampleTime_480Cycles }, // PA1, ADC_FM_CV
   { GPIOA, GPIO_Pin_2, ADC_Channel_2, ADC_SampleTime_480Cycles }, // PA2, ADC_PARAM1_CV
-  { GPIOB, GPIO_Pin_1, ADC_Channel_12, ADC_SampleTime_480Cycles }, // PB1, ADC_PARAM2_CV
+  { GPIOB, GPIO_Pin_1, ADC_Channel_9, ADC_SampleTime_480Cycles }, // PB1, ADC_PARAM2_CV
 };
 
 static const AdcChannelDesc AdcPotChannels[] = {
@@ -59,7 +59,6 @@ static const AdcChannelDesc AdcPotChannels[] = {
 };
   
 void InternalAdc::Init() {
-
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC, ENABLE);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
@@ -113,18 +112,19 @@ void InternalAdc::Init() {
   adc_init.ADC_ContinuousConvMode = DISABLE;
   adc_init.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
   adc_init.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
-  adc_init.ADC_DataAlign = ADC_DataAlign_Left;
+  adc_init.ADC_DataAlign = ADC_DataAlign_Right; // Match mcp3204 for now
   adc_init.ADC_NbrOfConversion = ADC_CHANNEL_LAST;
   ADC_Init(ADC1, &adc_init);
 
   // Using ADC_Prescaler_Div6
   // 168M / 2 / 6 / (4x(480+20) + 6x(144+20)) = 4.69KHz
  
+  int rank = 1;
   for (int i = 0; i < 4; ++i)
-    ADC_RegularChannelConfig(ADC1, AdcCvChannels[i].channel, i+1, AdcCvChannels[i].sample_time);
+    ADC_RegularChannelConfig(ADC1, AdcCvChannels[i].channel, rank++, AdcCvChannels[i].sample_time);
 
   for (int i = 0; i < 6; ++i)
-    ADC_RegularChannelConfig(ADC1, AdcPotChannels[i].channel, i+1, AdcPotChannels[i].sample_time);
+    ADC_RegularChannelConfig(ADC1, AdcPotChannels[i].channel, rank++, AdcPotChannels[i].sample_time);
 
   ADC_DMARequestAfterLastTransferCmd(ADC1, ENABLE);
   ADC_Cmd(ADC1, ENABLE);

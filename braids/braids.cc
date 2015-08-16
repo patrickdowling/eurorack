@@ -109,10 +109,14 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
     current_sample = 0;
     playback_block = (playback_block + 1) % kNumBlocks;
   }
-  
+
+// TODO Trigger stuff -- how often?
+// PipelinedScan would complete after kNumChannels x 3 aquisition stages of ADC?
+// 
+#if 0
   bool adc_scan_cycle_complete = adc.PipelinedScan();
   if (adc_scan_cycle_complete) {
-//    ui.UpdateCv(adc.channel(0), adc.channel(1), adc.channel(2), adc.channel(3));
+    //ui.UpdateCv(adc.channel(0), adc.channel(1), adc.channel(2), adc.channel(3));
     if (trigger_detected_flag) {
       trigger_delay = settings.trig_delay()
           ? (1 << settings.trig_delay()) : 0;
@@ -126,6 +130,7 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
       }
     }
   }
+#endif
 }
 
 }
@@ -313,6 +318,8 @@ void RenderBlock() {
   render_block = (render_block + 1) % kNumBlocks;
   
   debug_pin.Low();
+
+  ui.UpdateCv(internal_adc.raw_values());
 
   internal_adc.Convert();
 }

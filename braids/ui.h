@@ -29,12 +29,14 @@
 #ifndef BRAIDS_UI_H_
 #define BRAIDS_UI_H_
 
+#include <string.h>
 #include "stmlib/stmlib.h"
 
 #include "stmlib/ui/event_queue.h"
 
 #include "braids/drivers/display.h"
 #include "braids/drivers/encoder.h"
+#include "braids/drivers/internal_adc.h"
 #include "braids/drivers/leds.h"
 #include "braids/drivers/switches.h"
 #include "braids/settings.h"
@@ -77,15 +79,8 @@ class Ui {
     Print(buffer);
   }
   
-  inline void UpdateCv(
-      int16_t cv_param,
-      int16_t cv_color,
-      int16_t cv_pitch,
-      int16_t cv_fm) {
-    cv_[0] = cv_param;
-    cv_[1] = cv_color;
-    cv_[2] = cv_pitch;
-    cv_[3] = cv_fm;
+  inline void UpdateCv(const uint16_t *values) {
+    memcpy(cv_, values, sizeof(cv_));
   }
   
   inline void StepMarquee() {
@@ -129,7 +124,8 @@ class Ui {
   Switches switches_;
   
   int16_t dac_code_c2_;
-  int16_t cv_[4];
+  int16_t cv_[ADC_CHANNEL_LAST];
+  uint8_t cv_index_;
   
   uint8_t splash_frame_;
   uint8_t marquee_step_;
