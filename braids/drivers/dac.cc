@@ -43,16 +43,16 @@ void Dac::Init() {
   GPIO_Init(GPIOA, &gpio_init);
   
   // Initialize MOSI and SCK pins.
-  gpio_init.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_15;
+  gpio_init.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_12;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_AF;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOB, &gpio_init);
+  GPIO_Init(GPIOC, &gpio_init);
 
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_SPI2); // SPI2_SCK
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_SPI2); // SPI2_MOSI
+  RCC_APB1PeriphClockCmd(DAC_RCC_SPIX, ENABLE);
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, DAC_AF_SPIX); // SCK
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, DAC_AF_SPIX); // MOSI
 
   // Initialize SPI
   SPI_InitTypeDef spi_init;
@@ -66,8 +66,8 @@ void Dac::Init() {
   spi_init.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
   spi_init.SPI_FirstBit = SPI_FirstBit_MSB;
   spi_init.SPI_CRCPolynomial = 7;
-  SPI_Init(SPI2, &spi_init);
-  SPI_Cmd(SPI2, ENABLE);
+  SPI_Init(DAC_SPIX, &spi_init);
+  SPI_Cmd(DAC_SPIX, ENABLE);
 
 #ifdef DAC_USE_DMA
   dma_buffer_[0] = dma_buffer_[1] = 32768;
@@ -78,7 +78,7 @@ void Dac::Init() {
   DMA_DeInit(DAC_DMA_STREAM);
 
   dma_init_tx_.DMA_Channel = DAC_DMA_CHANNEL;
-  dma_init_tx_.DMA_PeripheralBaseAddr = (uint32_t)&SPI2->DR;
+  dma_init_tx_.DMA_PeripheralBaseAddr = (uint32_t)&DAC_SPIX->DR;
   dma_init_tx_.DMA_Memory0BaseAddr = (uint32_t)dma_buffer_;
   dma_init_tx_.DMA_DIR = DMA_DIR_MemoryToPeripheral;
   dma_init_tx_.DMA_BufferSize = 2;
@@ -94,7 +94,7 @@ void Dac::Init() {
   dma_init_tx_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
   DMA_Init(DAC_DMA_STREAM, &dma_init_tx_);
 
-  SPI_I2S_DMACmd(SPI2, SPI_I2S_DMAReq_Tx, ENABLE);
+  SPI_I2S_DMACmd(DAC_SPIX, SPI_I2S_DMAReq_Tx, ENABLE);
   DMA_Cmd(DAC_DMA_STREAM, ENABLE);
 
 #endif

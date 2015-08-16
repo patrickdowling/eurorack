@@ -32,6 +32,10 @@
 #include "platform.h"
 #include "stmlib/stmlib.h"
 
+#define DAC_SPIX SPI3
+#define DAC_RCC_SPIX RCC_APB1Periph_SPI3
+#define DAC_AF_SPIX GPIO_AF_SPI3
+
 #define DAC_USE_DMA_DISABLED
 
 #ifdef DAC_USE_DMA
@@ -66,7 +70,7 @@ class Dac {
   inline void Write(uint16_t value) {
     GPIO_SET(GPIOA, kPinSS);
     GPIO_RESET(GPIOA, kPinSS);
-    SPI2->DR = value >> 8;
+    DAC_SPIX->DR = value >> 8;
     __asm__("nop");
     __asm__("nop");
     __asm__("nop");
@@ -83,7 +87,7 @@ class Dac {
     __asm__("nop");
     __asm__("nop");
     __asm__("nop");
-    SPI2->DR = value << 8;
+    DAC_SPIX->DR = value << 8;
   }
  #endif
  

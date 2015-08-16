@@ -35,6 +35,9 @@ namespace braids {
 const gpio_pin_t kPinDebug = GPIO_Pin_2;
 
 void DebugPin::Init() {
+
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+
   GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = kPinDebug;
   gpio_init.GPIO_Speed = GPIO_Speed_50MHz;

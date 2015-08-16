@@ -137,7 +137,7 @@ void Init() {
   system_clock.Init();
   adc.Init(false);
   gate_input.Init();
-  // debug_pin.Init();
+  debug_pin.Init();
   dac.Init();
   osc.Init();
   internal_adc.Init();
@@ -190,7 +190,7 @@ void RenderBlock() {
   static int32_t previous_pitch = 0;
   static int32_t previous_shape = 0;
 
-  // debug_pin.High();
+  debug_pin.High();
   
   const TrigStrikeSettings& trig_strike = \
       trig_strike_settings[settings.GetValue(SETTING_TRIG_AD_SHAPE)];
@@ -311,7 +311,8 @@ void RenderBlock() {
     render_buffer[i] = static_cast<int32_t>(sample) * gain >> 16;
   }
   render_block = (render_block + 1) % kNumBlocks;
-  // debug_pin.Low();
+  
+  debug_pin.Low();
 
   internal_adc.Convert();
 }
