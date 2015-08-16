@@ -28,6 +28,7 @@
 
 #include "braids/drivers/display.h"
 
+#include <algorithm>
 #include <string.h>
 
 #include "braids/resources.h"
@@ -73,14 +74,18 @@ void Display::Init() {
   brightness_pwm_cycle_ = 0;
   brightness_ = 3;
   memset(buffer_, ' ', kDisplayWidth);
+  clear_decimals();
 }
 
 void Display::Refresh() {
   if (brightness_pwm_cycle_ <= brightness_) {
     GPIO_RESET(GPIO_DISP_CHAR, kCharacterEnablePins[active_position_]);
     active_position_ = (active_position_ + 1) % kDisplayWidth;
-    Shift14SegmentsWord(chr_characters[
-        static_cast<uint8_t>(buffer_[active_position_])]);
+    uint16_t chr = chr_characters[
+        static_cast<uint8_t>(buffer_[active_position_])];
+    if (decimal_[active_position_])
+      chr |= 0x02;
+    Shift14SegmentsWord(chr);
     GPIO_SET(GPIO_DISP_CHAR, kCharacterEnablePins[active_position_]);
   } else {
     GPIO_RESET(GPIO_DISP_CHAR, kCharacterEnablePins[active_position_]);
@@ -127,5 +132,9 @@ void Display::Shift14SegmentsWord(uint16_t data) {
   GPIO_WriteBit(GPIO_DISP_SPI, kPinEnable, Bit_SET);
 }
 #endif
+
+void Display::clear_decimals() {
+  std::fill(decimal_, decimal_ + kDisplayWidth, false);
+}
 
 }  // namespace braids

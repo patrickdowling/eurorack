@@ -93,6 +93,7 @@ void Ui::FlushEvents() {
 }
 
 void Ui::RefreshDisplay() {
+  display_.clear_decimals(); // TODO dirty ;)
   switch (mode_) {
     case MODE_SPLASH:
       {
@@ -121,6 +122,7 @@ void Ui::RefreshDisplay() {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
               if (cv_index_ + i < ADC_CHANNEL_LAST)
                 text[i] = '\x90' + (cv_[cv_index_ + i] * 7 >> 12);
+            display_.set_decimal(cv_index_ / kDisplayWidth, true);
             }
           }
           display_.Print(text);

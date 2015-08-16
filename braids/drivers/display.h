@@ -48,11 +48,14 @@ class Display {
   
   char* mutable_buffer() { return buffer_; }
   void set_brightness(uint16_t brightness) { brightness_ = brightness; }
- 
+  void set_decimal(unsigned pos, bool on) { decimal_[pos] = on; }
+  void clear_decimals();
+
  private:
   void Shift14SegmentsWord(uint16_t data);
 
   char buffer_[kDisplayWidth];
+  bool decimal_[kDisplayWidth];
   uint16_t active_position_;
   uint16_t brightness_pwm_cycle_;
   uint16_t brightness_;
