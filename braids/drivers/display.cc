@@ -41,10 +41,10 @@ const gpio_pin_t kPinEnable = GPIO_Pin_10;
 
 #define GPIO_DISP_CHAR GPIOB
 const gpio_pin_t kCharacterEnablePins[] = {
+  GPIO_Pin_12,
+  GPIO_Pin_14,
   GPIO_Pin_13,
   GPIO_Pin_15,
-  GPIO_Pin_12,
-  GPIO_Pin_14
 };
 
 void Display::Init() {
