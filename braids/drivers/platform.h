@@ -32,8 +32,6 @@
 #ifdef STM32F4XX
 #include <stm32f4xx_conf.h>
 
-typedef uint32_t gpio_pin_t;
-
 #define GPIO_SET(gpio,pins) \
 do { gpio->BSRRL = pins; } while(0)
 
@@ -46,8 +44,6 @@ do { gpio->BSRRH = pins; } while(0)
 #else
 #include <stm32f10x_conf.h>
 
-typedef uint16_t gpio_pin_t;
-
 #define GPIO_SET(gpio,pins) \
 do { gpio->BSRR = pins; } while(0)
 
@@ -58,5 +54,7 @@ do { gpio->BRR = pins; } while(0)
 #define PLATFORM_TIM1_UP_IRQHandler TIM1_UP_IRQHandler
 
 #endif
+
+typedef uint16_t gpio_pin_t;
 
 #endif // BRAIDS_DRIVERS_PLATFORM_H_
