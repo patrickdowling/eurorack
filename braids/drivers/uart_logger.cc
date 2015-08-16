@@ -44,7 +44,7 @@ void UartLogger::Init(uint32_t baud_rate) {
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &gpio_init);
 
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_USART1);
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_USART1);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
   // Initialize USART.
@@ -58,7 +58,6 @@ void UartLogger::Init(uint32_t baud_rate) {
   
   USART_Init(USART1, &usart_init);
   USART_Cmd(USART1, ENABLE);
-  
 }
 
 void UartLogger::Trace(uint8_t byte) {

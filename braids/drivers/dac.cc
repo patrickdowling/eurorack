@@ -36,7 +36,7 @@ void Dac::Init() {
   // Initialize SS pin.
   GPIO_InitTypeDef gpio_init;
   gpio_init.GPIO_Pin = kPinSS;
-  gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+  gpio_init.GPIO_Speed = GPIO_Speed_100MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_OUT;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -44,7 +44,7 @@ void Dac::Init() {
   
   // Initialize MOSI and SCK pins.
   gpio_init.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_12;
-  gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+  gpio_init.GPIO_Speed = GPIO_Speed_100MHz;
   gpio_init.GPIO_Mode = GPIO_Mode_AF;
   gpio_init.GPIO_OType = GPIO_OType_PP;
   gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;

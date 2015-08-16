@@ -69,6 +69,7 @@ class Dac {
 #else
   inline void Write(uint16_t value) {
     GPIO_SET(GPIOA, kPinSS);
+    __asm__("nop");
     GPIO_RESET(GPIOA, kPinSS);
     DAC_SPIX->DR = value >> 8;
     __asm__("nop");

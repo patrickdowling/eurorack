@@ -30,10 +30,6 @@
 
 namespace braids {
 
-const gpio_pin_t kPinSwitch = GPIO_Pin_9; //PC9
-const gpio_pin_t kPinA = GPIO_Pin_7; //PC7
-const gpio_pin_t kPinB = GPIO_Pin_8; //PC8
-
 void Encoder::Init() {
 
   GPIO_InitTypeDef gpio_init;

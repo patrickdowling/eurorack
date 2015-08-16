@@ -55,7 +55,7 @@ class Encoder {
   }
   
   inline bool pressed_immediate() const {
-    return !GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13);
+    return !GPIO_ReadInputDataBit(GPIOC, kPinSwitch);
   }
   
   inline int32_t increment() const {
@@ -73,6 +73,11 @@ class Encoder {
   }
  
  private:
+
+  static const gpio_pin_t kPinSwitch = GPIO_Pin_9; //PC9
+  static const gpio_pin_t kPinA = GPIO_Pin_7; //PC7
+  static const gpio_pin_t kPinB = GPIO_Pin_8; //PC8
+
   uint8_t switch_state_;
   uint8_t quadrature_decoding_state_[2];
   

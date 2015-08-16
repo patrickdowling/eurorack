@@ -42,7 +42,7 @@ class GateInput {
   void Init();
   
   inline bool Read() {
-    return !(GPIOA->IDR & kPinGate);
+    return !(GPIOC->IDR & kPinGate);
   }
   
   inline bool raised() {
