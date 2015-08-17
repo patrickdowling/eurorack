@@ -31,33 +31,32 @@
 #include "stmlib/system/system_clock.h"
 #include "stmlib/system/uid.h"
 
-#include "braids/drivers/adc.h"
 #include "braids/drivers/dac.h"
 #include "braids/drivers/debug_pin.h"
 #include "braids/drivers/gate_input.h"
-#include "braids/drivers/internal_adc.h"
 #include "braids/drivers/system.h"
+#include "braids/cv_scaler.h"
 #include "braids/envelope.h"
 #include "braids/macro_oscillator.h"
 #include "braids/signature_waveshaper.h"
 #include "braids/vco_jitter_source.h"
 #include "braids/ui.h"
 
+//#define DAC_TEST
+
 using namespace braids;
 using namespace std;
 using namespace stmlib;
-
 
 const size_t kNumBlocks = 4;
 const size_t kBlockSize = 24;
 
 MacroOscillator osc;
 Envelope envelope;
-Adc adc;
+CvScaler cv_scaler;
 Dac dac;
 DebugPin debug_pin;
 GateInput gate_input;
-InternalAdc internal_adc;
 SignatureWaveshaper ws;
 System sys;
 VcoJitterSource jitter_source;
@@ -97,8 +96,16 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
     return;
   }
   TIM1->SR = (uint16_t)~TIM_IT_Update;
-  
-  dac.Write(audio_samples[playback_block][current_sample] + 32768);
+
+  // TODO Original code outputs zeroes on DAC in this version, which is odd;
+  // the first protoype board uses the original code and gets data, so it
+  // might be something else that I'm missing right now.
+  //
+  // In any case, manually futzing the sample does the trick (pending proper
+  // analysis) and outputs a waveform.
+  const int32_t sample = static_cast<int32_t>(audio_samples[playback_block][current_sample] + 32768;
+  dac.Write(sample);
+  //dac.Write(audio_samples[playback_block][current_sample] + 32768);
 
   bool trigger_detected = gate_input.raised();
   sync_samples[playback_block][current_sample] = trigger_detected;
@@ -140,12 +147,11 @@ void Init() {
   settings.Init();
   ui.Init();
   system_clock.Init();
-  adc.Init(false);
+  cv_scaler.Init();
   gate_input.Init();
   debug_pin.Init();
   dac.Init();
   osc.Init();
-  internal_adc.Init();
   
   for (size_t i = 0; i < kNumBlocks; ++i) {
     fill(&audio_samples[i][0], &audio_samples[i][kBlockSize], 0);
@@ -190,7 +196,7 @@ const TrigStrikeSettings trig_strike_settings[] = {
   { 34, 60, 20 },
 };
 
-void RenderBlock() {
+void RenderBlock(const Parameters *parameters) {
   static uint16_t previous_pitch_adc_code = 0;
   static int32_t previous_pitch = 0;
   static int32_t previous_shape = 0;
@@ -208,7 +214,7 @@ void RenderBlock() {
   if (ui.paques()) {
     osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
   } else if (settings.meta_modulation()) {
-    int32_t shape = adc.channel(3);
+    int32_t shape = parameters->values[VALUE_FM];
     shape -= settings.data().fm_cv_offset;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
       previous_shape = shape;
@@ -228,16 +234,16 @@ void RenderBlock() {
   } else {
     osc.set_shape(settings.shape());
   }
-  uint16_t parameter_1 = adc.channel(0) << 3;
+  uint16_t parameter_1 = parameters->values[VALUE_PARAM1] << 3;
   parameter_1 += static_cast<uint32_t>(ad_value) * ad_timbre_amount >> 9;
   if (parameter_1 > 32767) {
     parameter_1 = 32767;
   }
-  osc.set_parameters(parameter_1, adc.channel(1) << 3);
+  osc.set_parameters(parameter_1, parameters->values[VALUE_PARAM2] << 3);
   
   // Apply hysteresis to ADC reading to prevent a single bit error to move
   // the quantized pitch up and down the quantization boundary.
-  uint16_t pitch_adc_code = adc.channel(2);
+  uint16_t pitch_adc_code = parameters->values[VALUE_PITCH];
   if (settings.pitch_quantization()) {
     if ((pitch_adc_code > previous_pitch_adc_code + 4) ||
         (pitch_adc_code < previous_pitch_adc_code - 4)) {
@@ -253,9 +259,8 @@ void RenderBlock() {
     pitch = (pitch + 64) & 0xffffff80;
   }
   if (!settings.meta_modulation()) {
-    pitch += settings.adc_to_fm(adc.channel(3));
+    pitch += settings.adc_to_fm(parameters->values[VALUE_FM]);
   }
-  pitch += internal_adc.value(0) >> 8;
   
   // Check if the pitch has changed to cause an auto-retrigger
   int32_t pitch_delta = pitch - previous_pitch;
@@ -266,7 +271,7 @@ void RenderBlock() {
   previous_pitch = pitch;
   
   if (settings.vco_drift()) {
-    int16_t jitter = jitter_source.Render(adc.channel(1) << 3);
+    int16_t jitter = jitter_source.Render(parameters->values[VALUE_PARAM2] << 3);
     pitch += (jitter >> 8);
   }
 
@@ -300,6 +305,11 @@ void RenderBlock() {
   }
   osc.Render(sync_buffer, render_buffer, kBlockSize);
   
+#ifdef DAC_TEST
+  static volatile uint16_t s = 0;
+  for (size_t i = 0; i < kBlockSize; ++i)
+    render_buffer[i] = s++;
+#else
   // Copy to DAC buffer with sample rate and bit reduction applied.
   int16_t sample = 0;
   size_t decimation_factor = decimation_factors[settings.data().sample_rate];
@@ -315,20 +325,21 @@ void RenderBlock() {
     }
     render_buffer[i] = static_cast<int32_t>(sample) * gain >> 16;
   }
+#endif
   render_block = (render_block + 1) % kNumBlocks;
   
   debug_pin.Low();
 
-  ui.UpdateCv(internal_adc.raw_values());
-
-  internal_adc.Convert();
+  ui.UpdateCv(cv_scaler.raw_values());
 }
 
 int main(void) {
   Init();
+  Parameters parameters;
   while (1) {
     while (render_block != playback_block) {
-      RenderBlock();
+      cv_scaler.Read(&parameters);
+      RenderBlock(&parameters);
     }
     ui.DoEvents();
   }

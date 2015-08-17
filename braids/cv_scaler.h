@@ -1,6 +1,6 @@
-// Copyright 2013 Olivier Gillet.
+// Copyright 2015 Patrick Dowling.
 //
-// Author: Olivier Gillet (ol.gillet@gmail.com)
+// Author: Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,61 +24,53 @@
 //
 // -----------------------------------------------------------------------------
 //
-// Driver for ADC.
+// CV and pot input scaling/mixing/processing stuff
+// Based on cv_scalers in other MI eurorack projects
 
-#ifndef BRAIDS_DRIVERS_INTERNAL_ADC_H_
-#define BRAIDS_DRIVERS_INTERNAL_ADC_H_
+#ifndef BRAIDS_CV_SCALER_H_
+#define BRAIDS_CV_SCALER_H_
 
 #include "stmlib/stmlib.h"
+#include "braids/drivers/internal_adc.h"
 
 namespace braids {
 
-enum AdcChannel {
-  ADC_VOCT_CV,
-  ADC_FM_CV,
-  ADC_PARAM1_CV,
-  ADC_PARAM2_CV,
-  ADC_PITCH_POT,
-  ADC_FINE_POT,
-  ADC_FM_POT,
-  ADC_PARAM1_POT,
-  ADC_MOD_POT,
-  ADC_PARAM2_POT,
-  ADC_CHANNEL_LAST,
+enum ParameterValue {
+  VALUE_PARAM1,
+  VALUE_PARAM2,
+  VALUE_PITCH,
+  VALUE_FM
 };
 
-class InternalAdc {
- public:
-  InternalAdc() { }
-  ~InternalAdc() { }
-  
+// to start, make things reasonably compatible with codebase
+struct Parameters {
+  uint16_t values[4];
+};
+
+class CvScaler {
+public:
+  CvScaler() { }
+  ~CvScaler() { }
+
   void Init();
-  void DeInit();
-  void Convert();
-  
-  inline int32_t value(int channel) {
-    int32_t v = (static_cast<int32_t>(values_[channel]) - 32768) << 8;
-    int32_t delta = v - state_[channel];
-    state_[channel] += (delta >> 8);
-    return state_[channel] >> 8;
+
+  void Read(Parameters *parameters);
+
+  inline uint16_t adc_value(size_t channel) const {
+    return adc_.raw_value(channel);
   }
 
-  inline uint16_t raw_value(int channel) const {
-    return values_[channel];
+  inline const uint16_t *raw_values() const {
+    return adc_.raw_values();
   }
 
-  inline const uint16_t* raw_values() const {
-    return &values_[0];
-  }
+private:
 
- private:
+  InternalAdc adc_;
 
-  int32_t state_[ADC_CHANNEL_LAST];
-  uint16_t values_[ADC_CHANNEL_LAST];
-  
-  DISALLOW_COPY_AND_ASSIGN(InternalAdc);
+  DISALLOW_COPY_AND_ASSIGN(CvScaler);
 };
 
-}  // namespace braids
+} // namespace braids
 
-#endif  // BRAIDS_DRIVERS_INTERNAL_ADC_H_
+#endif // BRAIDS_CV_SCALER_H_
