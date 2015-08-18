@@ -103,7 +103,7 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
   //
   // In any case, manually futzing the sample does the trick (pending proper
   // analysis) and outputs a waveform.
-  const int32_t sample = static_cast<int32_t>(audio_samples[playback_block][current_sample] + 32768;
+  const int32_t sample = static_cast<int32_t>(audio_samples[playback_block][current_sample]) + 32768;
   dac.Write(sample);
   //dac.Write(audio_samples[playback_block][current_sample] + 32768);
 
@@ -147,7 +147,7 @@ void Init() {
   settings.Init();
   ui.Init();
   system_clock.Init();
-  cv_scaler.Init();
+  cv_scaler.Init(&settings);
   gate_input.Init();
   debug_pin.Init();
   dac.Init();
@@ -214,7 +214,7 @@ void RenderBlock(const Parameters *parameters) {
   if (ui.paques()) {
     osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
   } else if (settings.meta_modulation()) {
-    int32_t shape = parameters->values[VALUE_FM];
+    int32_t shape = parameters->fm;
     shape -= settings.data().fm_cv_offset;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
       previous_shape = shape;
@@ -234,16 +234,16 @@ void RenderBlock(const Parameters *parameters) {
   } else {
     osc.set_shape(settings.shape());
   }
-  uint16_t parameter_1 = parameters->values[VALUE_PARAM1] << 3;
+  uint16_t parameter_1 = parameters->param1 << 3;
   parameter_1 += static_cast<uint32_t>(ad_value) * ad_timbre_amount >> 9;
   if (parameter_1 > 32767) {
     parameter_1 = 32767;
   }
-  osc.set_parameters(parameter_1, parameters->values[VALUE_PARAM2] << 3);
+  osc.set_parameters(parameter_1, parameters->param2 << 3);
   
   // Apply hysteresis to ADC reading to prevent a single bit error to move
   // the quantized pitch up and down the quantization boundary.
-  uint16_t pitch_adc_code = parameters->values[VALUE_PITCH];
+  uint16_t pitch_adc_code = parameters->pitch;
   if (settings.pitch_quantization()) {
     if ((pitch_adc_code > previous_pitch_adc_code + 4) ||
         (pitch_adc_code < previous_pitch_adc_code - 4)) {
@@ -259,8 +259,9 @@ void RenderBlock(const Parameters *parameters) {
     pitch = (pitch + 64) & 0xffffff80;
   }
   if (!settings.meta_modulation()) {
-    pitch += settings.adc_to_fm(parameters->values[VALUE_FM]);
+    pitch += settings.adc_to_fm(parameters->fm);
   }
+  pitch += parameters->fine >> 8;
   
   // Check if the pitch has changed to cause an auto-retrigger
   int32_t pitch_delta = pitch - previous_pitch;
@@ -271,7 +272,7 @@ void RenderBlock(const Parameters *parameters) {
   previous_pitch = pitch;
   
   if (settings.vco_drift()) {
-    int16_t jitter = jitter_source.Render(parameters->values[VALUE_PARAM2] << 3);
+    int16_t jitter = jitter_source.Render(parameters->param2 << 3);
     pitch += (jitter >> 8);
   }
 

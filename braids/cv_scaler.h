@@ -32,19 +32,20 @@
 
 #include "stmlib/stmlib.h"
 #include "braids/drivers/internal_adc.h"
+#include "braids/settings.h"
 
 namespace braids {
 
-enum ParameterValue {
-  VALUE_PARAM1,
-  VALUE_PARAM2,
-  VALUE_PITCH,
-  VALUE_FM
-};
-
 // to start, make things reasonably compatible with codebase
 struct Parameters {
-  uint16_t values[4];
+
+  uint16_t pitch;
+  uint16_t fm;
+
+  uint16_t param1;
+  uint16_t param2;  
+
+  int32_t fine;
 };
 
 class CvScaler {
@@ -52,7 +53,7 @@ public:
   CvScaler() { }
   ~CvScaler() { }
 
-  void Init();
+  void Init(Settings *settings);
 
   void Read(Parameters *parameters);
 
@@ -67,6 +68,10 @@ public:
 private:
 
   InternalAdc adc_;
+  Settings *settings_;
+
+  // WIP
+  int32_t state_[ADC_CHANNEL_LAST];
 
   DISALLOW_COPY_AND_ASSIGN(CvScaler);
 };

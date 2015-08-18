@@ -26,6 +26,7 @@
 //
 // Driver for ADC.
 
+#include <algorithm>
 #include "braids/drivers/internal_adc.h"
 #include "braids/drivers//platform.h"
 
@@ -59,6 +60,9 @@ static const AdcChannelDesc AdcPotChannels[] = {
 };
   
 void InternalAdc::Init() {
+
+  std::fill(values_, values_ + ADC_CHANNEL_LAST, 0);
+
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC, ENABLE);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
@@ -112,7 +116,7 @@ void InternalAdc::Init() {
   adc_init.ADC_ContinuousConvMode = DISABLE;
   adc_init.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
   adc_init.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
-  adc_init.ADC_DataAlign = ADC_DataAlign_Right; // Match mcp3204 for now
+  adc_init.ADC_DataAlign = ADC_DataAlign_Right; // 12 bit, leave as right aligned for display code
   adc_init.ADC_NbrOfConversion = ADC_CHANNEL_LAST;
   ADC_Init(ADC1, &adc_init);
 

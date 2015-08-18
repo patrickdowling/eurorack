@@ -55,12 +55,9 @@ class InternalAdc {
   void Init();
   void DeInit();
   void Convert();
-  
-  inline int32_t value(int channel) {
-    int32_t v = (static_cast<int32_t>(values_[channel]) - 32768) << 8;
-    int32_t delta = v - state_[channel];
-    state_[channel] += (delta >> 8);
-    return state_[channel] >> 8;
+
+  inline float float_value(size_t channel) const {
+    return static_cast<float>(values_[channel]) / 65536.0f;
   }
 
   inline uint16_t raw_value(int channel) const {
@@ -73,7 +70,6 @@ class InternalAdc {
 
  private:
 
-  int32_t state_[ADC_CHANNEL_LAST];
   uint16_t values_[ADC_CHANNEL_LAST];
   
   DISALLOW_COPY_AND_ASSIGN(InternalAdc);
