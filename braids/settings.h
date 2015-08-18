@@ -149,6 +149,7 @@ enum Setting {
   // Not settings per-se, but used for menu display!
   SETTING_CALIBRATION,
   SETTING_CV_TESTER,
+  SETTING_CV_DEBUG,
   SETTING_MARQUEE,
   SETTING_VERSION,
   SETTING_LAST

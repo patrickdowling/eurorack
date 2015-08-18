@@ -55,7 +55,7 @@ const SettingsData kInitSettings = {
   false,
   false,
   
-  2,
+  0, // brightness
   0,
   
   { 0, 0, 0, 0, 0 },
@@ -242,6 +242,7 @@ const SettingMetadata Settings::metadata_[] = {
   { 0, 8, "TENV", ad_shape_values },
   { 0, 0, "CAL.", NULL },
   { 0, 0, "    ", NULL },  // Placeholder for CV tester
+  { 0, 0, "    ", NULL },  // Placeholder for CV debug
   { 0, 0, "    ", NULL },  // Placeholder for marquee
   { 0, 0, "v1.7", NULL },  // Placeholder for version string
 };
@@ -265,6 +266,7 @@ const Setting Settings::settings_order_[] = {
   SETTING_BRIGHTNESS,
   SETTING_CALIBRATION,
   SETTING_CV_TESTER,
+  SETTING_CV_DEBUG,
   SETTING_MARQUEE,
   SETTING_VERSION,
 };

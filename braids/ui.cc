@@ -122,10 +122,15 @@ void Ui::RefreshDisplay() {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
               if (cv_index_ + i < ADC_CHANNEL_LAST)
                 text[i] = '\x90' + (cv_[cv_index_ + i] * 7 >> 12);
-            display_.set_decimal(cv_index_ / kDisplayWidth, true);
+            display_.set_decimal_hex(cv_index_ / kDisplayWidth + 1);
             }
           }
           display_.Print(text);
+        } else if (setting_ == SETTING_CV_DEBUG) {
+          if (!blink_) {
+            PrintDebugHex(cv_[cv_index_]);
+            display_.set_decimal_hex(cv_index_ + 1);
+          }
         } else if (setting_ == SETTING_MARQUEE) {
           uint8_t length = strlen(settings.marquee_text());
           uint8_t padded_length = length + 2 * kDisplayWidth - 4;
@@ -239,6 +244,8 @@ void Ui::OnClick() {
         cv_index_ += kDisplayWidth;
         if (cv_index_ >= ADC_CHANNEL_LAST)
           cv_index_ = 0;
+      } else if (setting_ == SETTING_CV_DEBUG) {
+        cv_index_ = (cv_index_ + 1) % ADC_CHANNEL_LAST;
       }
       break;
       
@@ -292,6 +299,7 @@ void Ui::OnIncrement(const Event& e) {
         }
         setting_ = settings.setting_at_index(setting_index_);
         marquee_step_ = 0;
+        cv_index_ = 0;
       }
       break;
       
@@ -339,6 +347,7 @@ void Ui::DoEvents() {
   }
   if (queue_.idle_time() >= 50 &&
       (setting_ == SETTING_CV_TESTER ||
+      setting_ == SETTING_CV_DEBUG ||
       setting_ == SETTING_MARQUEE)) {
     refresh_display_ = true;
   }

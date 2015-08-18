@@ -78,6 +78,17 @@ class Ui {
     }
     Print(buffer);
   }
+
+  void PrintDebugHex(uint16_t x) {
+    char buffer[5];
+    buffer[4] = '\0';
+    for (uint16_t i = 0; i < 4; ++i) {
+      const uint8_t c = x & 0xf;
+      buffer[3 - i] = c < 10 ? ('0' + c) : ('A' + (c - 10));
+      x >>= 4;
+    }
+    Print(buffer);
+  }
   
   inline void UpdateCv(const uint16_t *values) {
     memcpy(cv_, values, sizeof(cv_));

@@ -137,4 +137,10 @@ void Display::clear_decimals() {
   std::fill(decimal_, decimal_ + kDisplayWidth, false);
 }
 
+void Display::set_decimal_hex(uint16_t value) {
+  for (size_t i = 0; i < kDisplayWidth; ++i)
+    decimal_[kDisplayWidth - 1 - i] = value & (0x1 << i);
+}
+
+
 }  // namespace braids
