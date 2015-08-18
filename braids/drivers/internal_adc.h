@@ -60,7 +60,7 @@ class InternalAdc {
     return static_cast<float>(values_[channel]) / 65536.0f;
   }
 
-  inline uint16_t raw_value(int channel) const {
+  inline uint16_t raw_value(size_t channel) const {
     return values_[channel];
   }
 

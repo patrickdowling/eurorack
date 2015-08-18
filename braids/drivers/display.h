@@ -48,7 +48,7 @@ class Display {
   
   char* mutable_buffer() { return buffer_; }
   void set_brightness(uint16_t brightness) { brightness_ = brightness; }
-  void set_decimal(unsigned pos, bool on) { decimal_[pos] = on; }
+  void set_decimal(size_t pos, bool on) { decimal_[pos] = on; }
   void set_decimal_hex(uint16_t value);
   void clear_decimals();
 

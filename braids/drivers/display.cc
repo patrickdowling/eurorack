@@ -142,5 +142,4 @@ void Display::set_decimal_hex(uint16_t value) {
     decimal_[kDisplayWidth - 1 - i] = value & (0x1 << i);
 }
 
-
 }  // namespace braids
