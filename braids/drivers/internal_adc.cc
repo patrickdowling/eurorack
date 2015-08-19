@@ -116,7 +116,7 @@ void InternalAdc::Init() {
   adc_init.ADC_ContinuousConvMode = DISABLE;
   adc_init.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
   adc_init.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
-  adc_init.ADC_DataAlign = ADC_DataAlign_Right; // 12 bit, leave as right aligned for display code
+  adc_init.ADC_DataAlign = ADC_DataAlign_Left;
   adc_init.ADC_NbrOfConversion = ADC_CHANNEL_LAST;
   ADC_Init(ADC1, &adc_init);
 

@@ -135,8 +135,8 @@ class Ui {
   Switches switches_;
   
   int16_t dac_code_c2_;
-  int16_t cv_[ADC_CHANNEL_LAST];
-  uint8_t cv_index_;
+  uint16_t cv_[ADC_CHANNEL_LAST];
+  size_t cv_index_;
   
   uint8_t splash_frame_;
   uint8_t marquee_step_;

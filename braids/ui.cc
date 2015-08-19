@@ -120,8 +120,9 @@ void Ui::RefreshDisplay() {
           char text[] = "    ";
           if (!blink_) {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
-              if (cv_index_ + i < ADC_CHANNEL_LAST)
-                text[i] = '\x90' + (cv_[cv_index_ + i] * 7 >> 12);
+              if (cv_index_ + i < ADC_CHANNEL_LAST) {
+                text[i] = '\x90' + ((cv_[cv_index_ + i] >> 4) * 7 >> 12);
+              }
             display_.set_decimal_hex(cv_index_ / kDisplayWidth + 1);
             }
           }
@@ -248,7 +249,8 @@ void Ui::OnClick() {
         cv_index_ = (cv_index_ + 1) % ADC_CHANNEL_LAST;
       }
       break;
-      
+
+    // TODO These probably aren't right!    
     case MODE_CALIBRATION_STEP_1:
       dac_code_c2_ = cv_[2];
       mode_ = MODE_CALIBRATION_STEP_2;
