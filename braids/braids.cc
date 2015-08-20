@@ -31,6 +31,8 @@
 #include "stmlib/system/system_clock.h"
 #include "stmlib/system/uid.h"
 
+#define ENABLE_MEASURE_SCOPE
+
 #include "braids/drivers/dac.h"
 #include "braids/drivers/debug_pin.h"
 #include "braids/drivers/gate_input.h"
@@ -147,7 +149,7 @@ void Init() {
   settings.Init();
   ui.Init();
   system_clock.Init();
-  cv_scaler.Init(&settings);
+  cv_scaler.Init();
   gate_input.Init();
   debug_pin.Init();
   dac.Init();
@@ -201,7 +203,7 @@ void RenderBlock(const Parameters *parameters) {
   static int32_t previous_pitch = 0;
   static int32_t previous_shape = 0;
 
-  debug_pin.High();
+  MEASURE_SCOPE_BEGIN(debug_pin);
   
   const TrigStrikeSettings& trig_strike = \
       trig_strike_settings[settings.GetValue(SETTING_TRIG_AD_SHAPE)];
@@ -329,7 +331,7 @@ void RenderBlock(const Parameters *parameters) {
 #endif
   render_block = (render_block + 1) % kNumBlocks;
   
-  debug_pin.Low();
+  MEASURE_SCOPE_END();
 
   ui.UpdateCv(cv_scaler.raw_values());
 }
@@ -339,7 +341,9 @@ int main(void) {
   Parameters parameters;
   while (1) {
     while (render_block != playback_block) {
+      MEASURE_SCOPE_BEGIN(debug_pin);
       cv_scaler.Read(&parameters);
+      MEASURE_SCOPE_END();
       RenderBlock(&parameters);
     }
     ui.DoEvents();

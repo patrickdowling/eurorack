@@ -48,6 +48,28 @@ class DebugPin {
   DISALLOW_COPY_AND_ASSIGN(DebugPin);
 };
 
+// Non-recursive debug pin toggle thing
+class ScopedDebugPin {
+public:
+  ScopedDebugPin(DebugPin &pin) : pin_(pin) {
+    pin_.High();
+  }
+
+  ~ScopedDebugPin() {
+    pin_.Low();
+  }
+private:
+  DebugPin &pin_;
+};
+
+#ifdef ENABLE_MEASURE_SCOPE
+#define MEASURE_SCOPE_BEGIN(p) do { ScopedDebugPin dp(p)
+#define MEASURE_SCOPE_END() } while(0)
+#else
+#define MEASURE_SCOPE_BEGIN(p)
+#define MEASURE_SCOPE_END()
+#endif
+
 }  // namespace braids
 
 #endif  // BRAIDS_DRIVERS_DEBUG_PIN_H_

@@ -32,11 +32,11 @@
 
 #include "stmlib/stmlib.h"
 #include "braids/drivers/internal_adc.h"
-#include "braids/settings.h"
 
 namespace braids {
 
-// to start, make things reasonably compatible with codebase
+// to start, make things reasonably compatible with codebase and encapsulate
+// any additional processing here
 struct Parameters {
 
   uint16_t pitch;
@@ -53,7 +53,7 @@ public:
   CvScaler() { }
   ~CvScaler() { }
 
-  void Init(Settings *settings);
+  void Init();
 
   void Read(Parameters *parameters);
 
@@ -68,10 +68,28 @@ public:
 private:
 
   InternalAdc adc_;
-  Settings *settings_;
 
   // WIP
-  int32_t state_[ADC_CHANNEL_LAST];
+  int32_t smoothed_[ADC_CHANNEL_LAST];
+
+  template <AdcChannel channel, int32_t samples, int32_t offset>
+  int32_t readPot() {
+    return smooth<channel, samples>(
+        static_cast<int32_t>(adc_.raw_value(channel)) + offset);
+  }
+
+  template <AdcChannel channel, int32_t samples>
+  int32_t readCv() {
+    return smooth<channel, samples>(
+        32767 - static_cast<int32_t>(adc_.raw_value(channel)));
+  }
+
+  template <AdcChannel channel, int32_t samples>
+  int32_t smooth(int32_t value) {
+    const int32_t smoothed = (smoothed_[channel] * (samples - 1) + value) / samples;
+    smoothed_[channel] = smoothed;
+    return smoothed;
+  }
 
   DISALLOW_COPY_AND_ASSIGN(CvScaler);
 };
