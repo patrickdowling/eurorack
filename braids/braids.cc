@@ -119,13 +119,11 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
     playback_block = (playback_block + 1) % kNumBlocks;
   }
 
-// TODO Trigger stuff -- how often?
-// PipelinedScan would complete after kNumChannels x 3 aquisition stages of ADC?
-// 
-#if 0
-  bool adc_scan_cycle_complete = adc.PipelinedScan();
-  if (adc_scan_cycle_complete) {
-    //ui.UpdateCv(adc.channel(0), adc.channel(1), adc.channel(2), adc.channel(3));
+  // settigs.trig_delay() is in multiples of 125u; at 96KHz each sample block
+  // of kBlockSize(24) is 250us in length so 2 updates per block.
+  // Original test was based on adc.PipelinedScan(), which would complete after
+  // kNumChannels(4) x 3 aquisition stages of ADC.
+  if (0 == current_sample % (kBlockSize/2)) {
     if (trigger_detected_flag) {
       trigger_delay = settings.trig_delay()
           ? (1 << settings.trig_delay()) : 0;
@@ -139,7 +137,6 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
       }
     }
   }
-#endif
 }
 
 }

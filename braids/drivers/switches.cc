@@ -18,7 +18,7 @@ void Switches::Init() {
   gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
   gpio_init.GPIO_PuPd = GPIO_PuPd_UP;
 
-  for (int i = 0; i < kNumSwitches; ++i ) {
+  for (size_t i = 0; i < kNumSwitches; ++i ) {
     gpio_init.GPIO_Pin = pins[i];
     GPIO_Init(gpios[i], &gpio_init);
   }
@@ -28,7 +28,7 @@ void Switches::Init() {
 
 void Switches::Debounce() {
 
-  for (int i = 0; i < kNumSwitches; ++i )
+  for (size_t i = 0; i < kNumSwitches; ++i )
     switch_state_[i] = (switch_state_[i] << 1) | GPIO_ReadInputDataBit(gpios[i], pins[i]);
 }
 

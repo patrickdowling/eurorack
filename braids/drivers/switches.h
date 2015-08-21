@@ -45,19 +45,19 @@ public:
   void Init();
   void Debounce();
 
-  inline bool released(int index) const {
+  inline bool released(size_t index) const {
     return switch_state_[index] == 0x7f;
   }
 
-  inline bool just_pressed(int index) const {
+  inline bool just_pressed(size_t index) const {
     return switch_state_[index] == 0x80;
   }
 
-  inline bool pressed(int index) const {
+  inline bool pressed(size_t index) const {
     return switch_state_[index] == 0x00;
   }
 
-  inline bool pressed_immediate(int index) const {
+  inline bool pressed_immediate(size_t index) const {
     switch (index) {
       case 0: return !GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_11);
       case 1: return !GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_5);
