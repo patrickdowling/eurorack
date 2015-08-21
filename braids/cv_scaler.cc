@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "stmlib/dsp/dsp.h"
 #include "braids/cv_scaler.h"
 #include "braids/settings.h"
 
@@ -31,15 +32,17 @@ void CvScaler::Read(Parameters *parameters) {
   // for all channels so shift needed. ADCs in both cases are 12b anyway.
 
   parameters->pitch = readPot<ADC_PITCH_POT, 4, 0>() >> 4;
-  parameters->fm = 0;
+
+  int32_t fm = readCvBi<ADC_FM_CV, 1>() * readPot<ADC_FM_POT, 4, -32768>() / 32768;
+  parameters->fm = (32768 + stmlib::Clip16(fm)) >> 4;
 
   int32_t value;
 
-  value = readPot<ADC_PARAM1_POT, 4, 0>() + readCv<ADC_PARAM1_CV, 1>();
+  value = readPot<ADC_PARAM1_POT, 4, 0>() + readCvBi<ADC_PARAM1_CV, 1>();
   CONSTRAIN(value, 0, 65535)
   parameters->param1 = value >> 4;
 
-  value = readPot<ADC_PARAM2_POT, 4, 0>() + readCv<ADC_PARAM2_CV, 1>();
+  value = readPot<ADC_PARAM2_POT, 4, 0>() + readCvBi<ADC_PARAM2_CV, 1>();
   CONSTRAIN(value, 0, 65535)
   parameters->param2 = value >> 4;
 

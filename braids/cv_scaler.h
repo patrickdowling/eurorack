@@ -79,7 +79,13 @@ private:
   }
 
   template <AdcChannel channel, int32_t samples>
-  int32_t readCv() {
+  int32_t readCvUni() {
+    return smooth<channel, samples>(
+        65535 - static_cast<int32_t>(adc_.raw_value(channel)));
+  }
+
+  template <AdcChannel channel, int32_t samples>
+  int32_t readCvBi() {
     return smooth<channel, samples>(
         32767 - static_cast<int32_t>(adc_.raw_value(channel)));
   }
