@@ -50,6 +50,7 @@ void Ui::Init() {
   setting_ = SETTING_OSCILLATOR_SHAPE;
   setting_index_ = 0;
   cv_index_ = 0;
+  gate_ = false;
 }
 
 void Ui::Poll() {
@@ -77,15 +78,24 @@ void Ui::Poll() {
   }
 
   switches_.Debounce();
-  for (int i = 0; i < kNumSwitches; ++i) {
+  for (size_t i = 0; i < kNumSwitches; ++i) {
     if (switches_.just_pressed(i)) {
       queue_.AddEvent(CONTROL_SWITCH, i, 0);
+      switch_press_time_[i] = system_clock.milliseconds();
+    }
+    if (switches_.released(i)) {
+      queue_.AddEvent(CONTROL_SWITCH, i,
+                      system_clock.milliseconds() - switch_press_time_[i] + 1);
     }
   }
 
   if ((sub_clock_ & 1) == 0) {
     display_.Refresh();
   }
+
+  leds_.set_gate(gate_);
+  leds_.set_status(mode_ != MODE_EDIT || setting_ != SETTING_OSCILLATOR_SHAPE);
+  leds_.Write();
 }
 
 void Ui::FlushEvents() {
@@ -311,10 +321,21 @@ void Ui::OnIncrement(const Event& e) {
 }
 
 void Ui::OnSwitchPressed(const stmlib::Event &e) {
-  switch (static_cast<SwitchIndex>(e.control_id)){
+  switch (static_cast<SwitchIndex>(e.control_id)) {
     case SWITCH_S1: break;
-    case SWITCH_GATE: break;
+    case SWITCH_GATE:
+      gate_ = true;
+      break;
     default: break;
+  }
+}
+
+void Ui::OnSwitchReleased(const stmlib::Event &e) {
+  switch (static_cast<SwitchIndex>(e.control_id)) {
+    case SWITCH_S1: break;
+    case SWITCH_GATE:
+      gate_ = false;
+      break;
   }
 }
 
@@ -331,6 +352,8 @@ void Ui::DoEvents() {
     } else if (e.control_type == CONTROL_SWITCH) {
       if (e.data == 0) {
         OnSwitchPressed(e);
+      } else {
+        OnSwitchReleased(e);
       }
     }
     refresh_display_ = true;

@@ -109,6 +109,10 @@ class Ui {
   inline void set_meta_shape(MacroOscillatorShape shape) {
     meta_shape_ = shape;
   }
+
+  inline bool gate() const {
+    return gate_;
+  }
   
  private:
   void OnIncrement(const stmlib::Event& event);
@@ -116,11 +120,13 @@ class Ui {
   void OnLongClick();
   void RefreshDisplay();
   void OnSwitchPressed(const stmlib::Event &e);
+  void OnSwitchReleased(const stmlib::Event &e);
 
   stmlib::EventQueue<16> queue_;
   
   uint32_t encoder_press_time_;
   bool inhibit_further_switch_events_;
+  uint32_t switch_press_time_[kNumSwitches];
   
   int16_t value_;
   uint8_t sub_clock_;
@@ -143,6 +149,7 @@ class Ui {
   uint8_t marquee_character_;
   bool marquee_dirty_character_;
   bool blink_;
+  bool gate_;
   
   MacroOscillatorShape meta_shape_;
 

@@ -15,7 +15,7 @@ void Switches::Init() {
   GPIO_StructInit(&gpio_init);
   gpio_init.GPIO_Mode = GPIO_Mode_IN;
   gpio_init.GPIO_OType = GPIO_OType_PP;
-  gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
+  gpio_init.GPIO_Speed = GPIO_Speed_2MHz;
   gpio_init.GPIO_PuPd = GPIO_PuPd_UP;
 
   for (size_t i = 0; i < kNumSwitches; ++i ) {
