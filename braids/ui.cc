@@ -145,7 +145,7 @@ void Ui::RefreshDisplay() {
         } else if (setting_ == SETTING_MARQUEE) {
           uint8_t length = strlen(settings.marquee_text());
           uint8_t padded_length = length + 2 * kDisplayWidth - 4;
-          uint8_t position = ((cv_[0] >> 4) * (padded_length - 1)) >> 8;
+          uint8_t position = ((cv_[0] >> 4 >> 4) * (padded_length - 1)) >> 8;
           position += (marquee_step_ % padded_length);
           position += 1;
           char text[] = "    ";
