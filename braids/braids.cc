@@ -99,15 +99,8 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
   }
   TIM1->SR = (uint16_t)~TIM_IT_Update;
 
-  // TODO Original code outputs zeroes on DAC in this version, which is odd;
-  // the first protoype board uses the original code and gets data, so it
-  // might be something else that I'm missing right now.
-  //
-  // In any case, manually futzing the sample does the trick (pending proper
-  // analysis) and outputs a waveform.
-  const int32_t sample = static_cast<int32_t>(audio_samples[playback_block][current_sample]) + 32768;
-  dac.Write(sample);
-  //dac.Write(audio_samples[playback_block][current_sample] + 32768);
+  // TODO Check fix timing issues
+  dac.Write(audio_samples[playback_block][current_sample] + 32768);
 
   bool trigger_detected = gate_input.raised();
   sync_samples[playback_block][current_sample] = trigger_detected;
@@ -242,7 +235,7 @@ void RenderBlock(const Parameters *parameters) {
   
   // Apply hysteresis to ADC reading to prevent a single bit error to move
   // the quantized pitch up and down the quantization boundary.
-  uint16_t pitch_adc_code = parameters->pitch;
+  uint16_t pitch_adc_code = parameters->pitch_cv + parameters->pitch_coarse;
   if (settings.pitch_quantization()) {
     if ((pitch_adc_code > previous_pitch_adc_code + 4) ||
         (pitch_adc_code < previous_pitch_adc_code - 4)) {
@@ -260,7 +253,7 @@ void RenderBlock(const Parameters *parameters) {
   if (!settings.meta_modulation()) {
     pitch += settings.adc_to_fm(parameters->fm);
   }
-  pitch += parameters->fine >> 8;
+  pitch += parameters->pitch_fine >> 8;
   
   // Check if the pitch has changed to cause an auto-retrigger
   int32_t pitch_delta = pitch - previous_pitch;
@@ -295,7 +288,7 @@ void RenderBlock(const Parameters *parameters) {
     ui.StepMarquee();
     trigger_flag = false;
   }
-  
+
   uint8_t destination = settings.GetValue(SETTING_TRIG_DESTINATION);
   uint8_t* sync_buffer = sync_samples[render_block];
   int16_t* render_buffer = audio_samples[render_block];

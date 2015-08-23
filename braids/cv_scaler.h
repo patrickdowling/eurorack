@@ -39,13 +39,14 @@ namespace braids {
 // any additional processing here
 struct Parameters {
 
-  uint16_t pitch;
+  uint16_t pitch_cv;
+  uint16_t pitch_coarse;
+  int32_t pitch_fine;
   uint16_t fm;
 
   uint16_t param1;
   uint16_t param2;  
 
-  int32_t fine;
 };
 
 class CvScaler {
