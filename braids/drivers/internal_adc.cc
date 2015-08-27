@@ -51,8 +51,8 @@ static const AdcChannelDesc AdcCvChannels[] = {
 };
 
 static const AdcChannelDesc AdcPotChannels[] = {
-  { GPIOA, GPIO_Pin_4, ADC_Channel_4, ADC_SampleTime_144Cycles }, // PA4, ADC_PITCH_POT
-  { GPIOA, GPIO_Pin_5, ADC_Channel_5, ADC_SampleTime_144Cycles }, // PA5, ADC_FINE_POT
+  { GPIOA, GPIO_Pin_5, ADC_Channel_5, ADC_SampleTime_144Cycles }, // PA5, ADC_PITCH_POT
+  { GPIOA, GPIO_Pin_4, ADC_Channel_4, ADC_SampleTime_144Cycles }, // PA4, ADC_FINE_POT
   { GPIOC, GPIO_Pin_1, ADC_Channel_11, ADC_SampleTime_144Cycles }, // PC1, ADC_FM_POT
   { GPIOC, GPIO_Pin_3, ADC_Channel_13, ADC_SampleTime_144Cycles }, // PC3, ADC_PARAM1_POT
   { GPIOC, GPIO_Pin_0, ADC_Channel_10, ADC_SampleTime_144Cycles }, // PC0, ADC_MOD_POT

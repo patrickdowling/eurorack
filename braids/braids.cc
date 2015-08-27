@@ -136,10 +136,10 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
 
 void Init() {
   sys.Init(F_CPU / 96000 - 1, true);
-  settings.Init();
-  ui.Init();
   system_clock.Init();
-  cv_scaler.Init();
+  settings.Init();
+  cv_scaler.Init(settings.mutable_calibration_data());
+  ui.Init(&cv_scaler);
   gate_input.Init();
   debug_pin.Init();
   dac.Init();
@@ -207,7 +207,7 @@ void RenderBlock(const Parameters *parameters) {
     osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
   } else if (settings.meta_modulation()) {
     int32_t shape = parameters->fm;
-    shape -= settings.data().fm_cv_offset;
+    shape -= settings.data().calibration_data.fm_cv_offset;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
       previous_shape = shape;
     } else {
@@ -235,7 +235,7 @@ void RenderBlock(const Parameters *parameters) {
   
   // Apply hysteresis to ADC reading to prevent a single bit error to move
   // the quantized pitch up and down the quantization boundary.
-  uint16_t pitch_adc_code = parameters->pitch_cv + parameters->pitch_coarse;
+  int32_t pitch_adc_code = parameters->pitch;
   if (settings.pitch_quantization()) {
     if ((pitch_adc_code > previous_pitch_adc_code + 4) ||
         (pitch_adc_code < previous_pitch_adc_code - 4)) {
@@ -244,7 +244,7 @@ void RenderBlock(const Parameters *parameters) {
       pitch_adc_code = previous_pitch_adc_code;
     }
   }
-  int32_t pitch = settings.adc_to_pitch(pitch_adc_code);
+  int32_t pitch = pitch_adc_code; // settings.adc_to_pitch(pitch_adc_code);
   if (settings.pitch_quantization() == PITCH_QUANTIZATION_QUARTER_TONE) {
     pitch = (pitch + 32) & 0xffffffc0;
   } else if (settings.pitch_quantization() == PITCH_QUANTIZATION_SEMITONE) {
@@ -322,8 +322,6 @@ void RenderBlock(const Parameters *parameters) {
   render_block = (render_block + 1) % kNumBlocks;
   
   MEASURE_SCOPE_END();
-
-  ui.UpdateCv(cv_scaler.raw_values());
 }
 
 int main(void) {

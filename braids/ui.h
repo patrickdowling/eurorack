@@ -49,6 +49,7 @@ enum UiMode {
   MODE_MENU,
   MODE_CALIBRATION_STEP_1,
   MODE_CALIBRATION_STEP_2,
+  MODE_CALIBRATION_STEP_3,
   MODE_MARQUEE_EDITOR
 };
 
@@ -57,12 +58,14 @@ enum SwitchIndex {
   SWITCH_GATE,
 };
 
+class CvScaler;
+
 class Ui {
  public:
   Ui() { }
   ~Ui() { }
   
-  void Init();
+  void Init(CvScaler *cv_scaler);
   void Poll();
   void DoEvents();
   void FlushEvents();
@@ -89,11 +92,7 @@ class Ui {
     }
     Print(buffer);
   }
-  
-  inline void UpdateCv(const uint16_t *values) {
-    memcpy(cv_, values, sizeof(cv_));
-  }
-  
+
   inline void StepMarquee() {
     marquee_step_++;
     blink_ = true;
@@ -139,9 +138,11 @@ class Ui {
   Encoder encoder_;
   Leds leds_;
   Switches switches_;
-  
-  int16_t dac_code_c2_;
-  uint16_t cv_[ADC_CHANNEL_LAST];
+
+  CvScaler *cv_scaler_;
+  uint16_t dac_code_c2_;
+  uint16_t dac_code_c4_;
+
   size_t cv_index_;
   
   uint8_t splash_frame_;

@@ -59,10 +59,10 @@ const SettingsData kInitSettings = {
   0,
   
   { 0, 0, 0, 0, 0 },
-  
-  50,
-  15401,
-  2048,
+
+  { 50, 10754/*15401*/, 2048 }, // calibration
+  // scale = 24*128*4096 / (1/7 * 4096 * 2)
+
   "GREETINGS FROM MUTABLE INSTRUMENTS *EDIT ME*",
 };
 

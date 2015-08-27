@@ -30,6 +30,7 @@
 #define BRAIDS_SETTINGS_H_
 
 #include "stmlib/stmlib.h"
+#include "braids/drivers/internal_adc.h"
 
 namespace braids {
 
@@ -155,6 +156,13 @@ enum Setting {
   SETTING_LAST
 };
 
+struct CalibrationData {
+  int32_t pitch_cv_offset;
+  int32_t pitch_cv_scale;
+  int32_t fm_cv_offset;
+  uint16_t offset[ADC_POT_LAST - ADC_POT_FIRST];
+};
+
 struct SettingsData {
   uint8_t shape;
   uint8_t resolution;
@@ -172,11 +180,9 @@ struct SettingsData {
   uint8_t brightness;
   uint8_t trig_ad_shape;
   uint8_t padding[5];
-  
-  int32_t pitch_cv_offset;
-  int32_t pitch_cv_scale;
-  int32_t fm_cv_offset;
-  
+
+  CalibrationData calibration_data;
+
   char marquee_text[63];
   char magic_byte;
 };
@@ -233,6 +239,10 @@ class Settings {
     return static_cast<PitchQuantization>(data_.pitch_quantization);
   }
 
+  inline PitchRange pitch_range() const {
+    return static_cast<PitchRange>(data_.pitch_range);
+  }
+
   inline bool vco_flatten() const {
     return data_.vco_flatten;
   }
@@ -263,17 +273,33 @@ class Settings {
   
   inline const SettingsData& data() const { return data_; }
   inline SettingsData* mutable_data() { return &data_; }
-  
+
+  inline CalibrationData *mutable_calibration_data() {
+    return &data_.calibration_data;
+  }
+
+  // Notes about scaling/calibration in original code
+  // semitone: 128 steps, i.e. <<7
+  // cv_scale calculated based on 2 octaves * 128 / (c4 - c2)
+  // cv_offset to c3 = (c2 + c4) / 2
+  // in adc_to_pitch, the magic number 1638 is 2048 * 0.8 which
+  // I think comes frmo analog 8V offset vs. 10V cv input that
+  // gives +- 4 octave offset
+  // 60 = c3 = 261.5Hz
+  // 69 = a3 = 440hz
+
   void Calibrate(
       int32_t adc_code_c2,
       int32_t adc_code_c4,
       int32_t adc_code_fm) {
     if (adc_code_c4 != adc_code_c2) {
+
       int32_t scale = (24 * 128 * 4096L) / (adc_code_c4 - adc_code_c2);
-      data_.pitch_cv_scale = scale;
-      data_.pitch_cv_offset = (60 << 7) - 
+      data_.calibration_data.pitch_cv_scale = scale;
+
+      data_.calibration_data.pitch_cv_offset = (60 << 7) - 
           (scale * ((adc_code_c2 + adc_code_c4) >> 1) >> 12);
-      data_.fm_cv_offset = adc_code_fm;
+      data_.calibration_data.fm_cv_offset = adc_code_fm;
     }
     Save();
   }
@@ -281,15 +307,19 @@ class Settings {
   inline int32_t adc_to_pitch(int32_t pitch_adc_code) const {
     if (data_.pitch_range == PITCH_RANGE_EXTERNAL ||
         data_.pitch_range == PITCH_RANGE_LFO) {
-      pitch_adc_code = pitch_adc_code * data_.pitch_cv_scale >> 12;
-      pitch_adc_code += data_.pitch_cv_offset;
+    // +/- 4 octaves around the note received on the V/Oct input
+      pitch_adc_code = pitch_adc_code * data_.calibration_data.pitch_cv_scale >> 12;
+      pitch_adc_code += data_.calibration_data.pitch_cv_offset;
     } else if (data_.pitch_range == PITCH_RANGE_FREE) {
+    // +/- 4 octave centered around C3
       pitch_adc_code = (pitch_adc_code - 1638);
-      pitch_adc_code = pitch_adc_code * data_.pitch_cv_scale >> 12;
+      pitch_adc_code = pitch_adc_code * data_.calibration_data.pitch_cv_scale >> 12;
       pitch_adc_code += 60 << 7;
     } else if (data_.pitch_range == PITCH_RANGE_440) {
+    // locks the oscillator frequency to 440 Hz exactly
       pitch_adc_code = 69 << 7;
     } else {
+    // XTND (extended) provides a larger frequency range, but disables accurate V/Oct scaling as a side effect.
       pitch_adc_code = (pitch_adc_code - 1638) * 9 >> 1;
       pitch_adc_code += 60 << 7;
     }
@@ -303,7 +333,7 @@ class Settings {
   }
   
   inline int32_t adc_to_fm(int32_t fm_adc_code) const {
-    fm_adc_code -= data_.fm_cv_offset;
+    fm_adc_code -= data_.calibration_data.fm_cv_offset;
     fm_adc_code = fm_adc_code * 7680 >> 12;
     if (data_.pitch_range == PITCH_RANGE_440) {
       fm_adc_code = 0;

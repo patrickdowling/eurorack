@@ -27,6 +27,7 @@
 // User interface.
 
 #include "braids/ui.h"
+#include "braids/cv_scaler.h"
 
 #include <cstring>
 
@@ -38,12 +39,13 @@ using namespace stmlib;
 
 const uint32_t kEncoderLongPressTime = 800;
 
-void Ui::Init() {
+void Ui::Init(CvScaler *cv_scaler) {
   display_.Init();
   encoder_.Init();
   leds_.Init();
   switches_.Init();
   queue_.Init();
+  cv_scaler_ = cv_scaler;
   sub_clock_ = 0;
   value_ = 0;
   mode_ = MODE_SPLASH;
@@ -131,7 +133,7 @@ void Ui::RefreshDisplay() {
           if (!blink_) {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
               if (cv_index_ + i < ADC_CHANNEL_LAST) {
-                text[i] = '\x90' + ((cv_[cv_index_ + i] >> 4) * 7 >> 12);
+                text[i] = '\x90' + ((cv_scaler_->adc_value(cv_index_ + i) >> 4) * 7 >> 12);
               }
             display_.set_decimal_hex(cv_index_ / kDisplayWidth + 1);
             }
@@ -139,13 +141,13 @@ void Ui::RefreshDisplay() {
           display_.Print(text);
         } else if (setting_ == SETTING_CV_DEBUG) {
           if (!blink_) {
-            PrintDebugHex(cv_[cv_index_]);
+            PrintDebugHex(cv_scaler_->adc_value(cv_index_));
             display_.set_decimal_hex(cv_index_ + 1);
           }
         } else if (setting_ == SETTING_MARQUEE) {
           uint8_t length = strlen(settings.marquee_text());
           uint8_t padded_length = length + 2 * kDisplayWidth - 4;
-          uint8_t position = ((cv_[0] >> 4 >> 4) * (padded_length - 1)) >> 8;
+          uint8_t position = ((cv_scaler_->adc_value(0) >> 4 >> 4) * (padded_length - 1)) >> 8;
           position += (marquee_step_ % padded_length);
           position += 1;
           char text[] = "    ";
@@ -161,15 +163,19 @@ void Ui::RefreshDisplay() {
         }
       }
       break;
-      
+
     case MODE_CALIBRATION_STEP_1:
-      display_.Print(">C2 ");
+      display_.Print(">POT");
       break;
 
     case MODE_CALIBRATION_STEP_2:
-      display_.Print(">C4 ");
+      display_.Print(">C2 "); // 1V
       break;
-      
+
+    case MODE_CALIBRATION_STEP_3:
+      display_.Print(">C4 "); // 3V
+      break;
+
     case MODE_MARQUEE_EDITOR:
       {
         char text[] = "    ";
@@ -215,10 +221,18 @@ void Ui::OnLongClick() {
   }
 }
 
+static const uint16_t UI_LOCKED_POT_MASK = \
+    (0x1 << ADC_FINE_POT) |
+    (0x1 << ADC_PITCH_POT) |
+    (0x1 << ADC_FM_POT);
+
 void Ui::OnClick() {
   switch (mode_) {
     case MODE_EDIT:
       mode_ = MODE_MENU;
+      if (setting_ == SETTING_OSCILLATOR_SHAPE) {
+        cv_scaler_->LockChannels(UI_LOCKED_POT_MASK);
+      }
       break;
       
     case MODE_MARQUEE_EDITOR:
@@ -248,9 +262,11 @@ void Ui::OnClick() {
         mode_ = MODE_EDIT;
         if (setting_ == SETTING_OSCILLATOR_SHAPE) {
           settings.Save();
+          cv_scaler_->UnlockChannels();
         }
       } else if (setting_ == SETTING_VERSION) {
         mode_ = MODE_SPLASH;
+        cv_scaler_->UnlockChannels();
       } else if (setting_ == SETTING_CV_TESTER) {
         cv_index_ += kDisplayWidth;
         if (cv_index_ >= ADC_CHANNEL_LAST)
@@ -262,15 +278,25 @@ void Ui::OnClick() {
 
     // TODO These probably aren't right!    
     case MODE_CALIBRATION_STEP_1:
-      dac_code_c2_ = cv_[2];
+      cv_scaler_->CalibrateOffsets();
       mode_ = MODE_CALIBRATION_STEP_2;
       break;
       
     case MODE_CALIBRATION_STEP_2:
-      settings.Calibrate(dac_code_c2_, cv_[2], cv_[3]);
-      mode_ = MODE_MENU;
+      cv_scaler_->Calibrate1V();
+      mode_ = MODE_CALIBRATION_STEP_3;
       break;
-      
+
+    case MODE_CALIBRATION_STEP_3:
+      if (cv_scaler_->Calibrate3V()) {
+        settings.Save();
+//      settings.Calibrate(dac_code_c2_>>4, dac_code_c4_>>4, cv_[ADC_FM_POT]>>4);
+        mode_ = MODE_MENU;
+      } else {
+        mode_ = MODE_CALIBRATION_STEP_1;
+      }
+      break;
+
     default:
       break;
   }
