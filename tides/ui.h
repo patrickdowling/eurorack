@@ -47,13 +47,15 @@ enum UiMode {
   UI_MODE_CALIBRATION_C2,
   UI_MODE_CALIBRATION_C4,
   UI_MODE_PAQUES,
-  UI_MODE_FACTORY_TESTING
+  UI_MODE_FACTORY_TESTING,
+  UI_MODE_QUANTIZE,
 };
 
 struct Settings {
   uint8_t mode;
   uint8_t range;
   uint8_t sync;
+  uint8_t quantize;
   uint8_t padding;
 };
 
@@ -109,6 +111,7 @@ class Ui {
   uint8_t mode_counter_;
   uint8_t range_counter_;
   uint8_t long_press_counter_;
+  uint8_t ignore_releases_;
   
   DISALLOW_COPY_AND_ASSIGN(Ui);
 };
