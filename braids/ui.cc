@@ -41,6 +41,7 @@ const uint32_t kEncoderLongPressTime = 800;
 
 void Ui::Init(CvScaler *cv_scaler) {
   display_.Init();
+  display_.set_brightness(settings.GetValue(SETTING_BRIGHTNESS) + 1);
   encoder_.Init();
   leds_.Init();
   switches_.Init();

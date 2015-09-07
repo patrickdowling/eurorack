@@ -62,12 +62,12 @@ private:
   DebugPin &pin_;
 };
 
-#ifdef ENABLE_MEASURE_SCOPE
-#define MEASURE_SCOPE_BEGIN(p) do { ScopedDebugPin dp(p)
-#define MEASURE_SCOPE_END() } while(0)
-#else
+#ifdef DISABLE_MEASURE_SCOPE
 #define MEASURE_SCOPE_BEGIN(p)
 #define MEASURE_SCOPE_END()
+#else
+#define MEASURE_SCOPE_BEGIN(p) do { ScopedDebugPin dp(p)
+#define MEASURE_SCOPE_END() } while(0)
 #endif
 
 }  // namespace braids
