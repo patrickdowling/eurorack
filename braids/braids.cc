@@ -207,7 +207,7 @@ void RenderBlock(const Parameters *parameters) {
     osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
   } else if (settings.meta_modulation()) {
     int32_t shape = parameters->fm;
-    shape -= settings.data().calibration_data.fm_cv_offset;
+    // shape -= settings.data().calibration_data.fm_cv_offset;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
       previous_shape = shape;
     } else {

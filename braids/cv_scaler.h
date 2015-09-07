@@ -42,7 +42,7 @@ struct Parameters {
 
   int32_t pitch; // already mixed pot & cv, but not quantized
   int32_t pitch_fine;
-  uint16_t fm;
+  int32_t fm; // already offset
 
   uint16_t param1;
   uint16_t param2;  

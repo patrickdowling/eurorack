@@ -333,7 +333,7 @@ class Settings {
   }
   
   inline int32_t adc_to_fm(int32_t fm_adc_code) const {
-    fm_adc_code -= data_.calibration_data.fm_cv_offset;
+    //fm_adc_code -= data_.calibration_data.fm_cv_offset; -> handled by CvScaler
     fm_adc_code = fm_adc_code * 7680 >> 12;
     if (data_.pitch_range == PITCH_RANGE_440) {
       fm_adc_code = 0;

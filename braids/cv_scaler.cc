@@ -66,12 +66,13 @@ void CvScaler::Read(Parameters *parameters) {
 
   parameters->pitch = adc_to_pitch(pitch_cv, pitch_coarse);
 
-  // expects uint32_t, No shift required
+  // expects int32_t, No shift required
   parameters->pitch_fine = readPot<ADC_FINE_POT, -32768>();
 
+  // TODO used calibrated offset?
   int32_t fm = attenuvert(readCvBi<ADC_FM_CV>(),
                           readPot<ADC_FM_POT, -32768>());
-  parameters->fm = (32768 + stmlib::Clip16(fm)) >> 4;
+  parameters->fm = stmlib::Clip16(fm) >> 4;
 
   int32_t value;
 
