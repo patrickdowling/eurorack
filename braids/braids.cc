@@ -31,8 +31,6 @@
 #include "stmlib/system/system_clock.h"
 #include "stmlib/system/uid.h"
 
-#define ENABLE_MEASURE_SCOPE
-
 #include "braids/drivers/dac.h"
 #include "braids/drivers/debug_pin.h"
 #include "braids/drivers/gate_input.h"
@@ -40,11 +38,21 @@
 #include "braids/cv_scaler.h"
 #include "braids/envelope.h"
 #include "braids/macro_oscillator.h"
+#include "braids/quantizer.h"
 #include "braids/signature_waveshaper.h"
 #include "braids/vco_jitter_source.h"
 #include "braids/ui.h"
+#include "braids/quantizer_scales.h"
 
-//#define DAC_TEST
+// #define DAC_TEST
+// #define PROFILE_RENDER 1
+#ifdef PROFILE_RENDER
+#define PROFILE_SCOPE_BEGIN() MEASURE_SCOPE_BEGIN(debug_pin)
+#define PROFILE_SCOPE_END() MEASURE_SCOPE_END()
+#else
+#define PROFILE_SCOPE_BEGIN(x)
+#define PROFILE_SCOPE_END()
+#endif
 
 using namespace braids;
 using namespace std;
@@ -59,11 +67,13 @@ CvScaler cv_scaler;
 Dac dac;
 DebugPin debug_pin;
 GateInput gate_input;
+Quantizer quantizer;
 SignatureWaveshaper ws;
 System sys;
 VcoJitterSource jitter_source;
 Ui ui;
 
+uint8_t current_scale = 0xff;
 size_t current_sample;
 volatile size_t playback_block;
 volatile size_t render_block;
@@ -141,9 +151,12 @@ void Init() {
   cv_scaler.Init(settings.mutable_calibration_data());
   ui.Init(&cv_scaler);
   gate_input.Init();
+#ifdef PROFILE_RENDER
   debug_pin.Init();
+#endif
   dac.Init();
   osc.Init();
+  quantizer.Init();
   
   for (size_t i = 0; i < kNumBlocks; ++i) {
     fill(&audio_samples[i][0], &audio_samples[i][kBlockSize], 0);
@@ -154,8 +167,8 @@ void Init() {
   current_sample = 0;
   
   envelope.Init();
-  ws.Init(GetUniqueId(2));
-  jitter_source.Init(GetUniqueId(1));
+  ws.Init(GetUniqueId(1));
+  jitter_source.Init();
   sys.StartTimers();
 }
 
@@ -170,43 +183,25 @@ const uint16_t bit_reduction_masks[] = {
 
 const uint16_t decimation_factors[] = { 24, 12, 6, 4, 3, 2, 1 };
 
-struct TrigStrikeSettings {
-  uint8_t attack;
-  uint8_t decay;
-  uint8_t amount;
-};
+uint16_t gain_lp;
 
-const TrigStrikeSettings trig_strike_settings[] = {
-  { 0, 30, 30 },
-  { 0, 40, 60 },
-  { 0, 50, 90 },
-  { 0, 60, 110 },
-  { 0, 70, 90 },
-  { 0, 90, 80 },
-  { 60, 100, 70 },
-  { 40, 72, 60 },
-  { 34, 60, 20 },
-};
-
-void RenderBlock(const Parameters *parameters) {
-  static uint16_t previous_pitch_adc_code = 0;
+void RenderBlock(const Parameters *block_parameters) {
   static int32_t previous_pitch = 0;
   static int32_t previous_shape = 0;
 
-  MEASURE_SCOPE_BEGIN(debug_pin);
-  
-  const TrigStrikeSettings& trig_strike = \
-      trig_strike_settings[settings.GetValue(SETTING_TRIG_AD_SHAPE)];
-  envelope.Update(trig_strike.attack, trig_strike.decay, 0, 0);
-  uint16_t ad_value = envelope.Render();
-  uint8_t ad_timbre_amount = settings.GetValue(SETTING_TRIG_DESTINATION) & 1
-      ? trig_strike.amount
-      : 0;
+#ifdef PROFILE_RENDER
+  debug_pin.High();
+#endif
+  envelope.Update(
+      settings.GetValue(SETTING_AD_ATTACK) * 8,
+      settings.GetValue(SETTING_AD_DECAY) * 8,
+      0, 0);
+  uint32_t ad_value = envelope.Render();
   
   if (ui.paques()) {
     osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
   } else if (settings.meta_modulation()) {
-    int32_t shape = parameters->fm;
+    int32_t shape = block_parameters->fm;
     // shape -= settings.data().calibration_data.fm_cv_offset;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
       previous_shape = shape;
@@ -226,35 +221,26 @@ void RenderBlock(const Parameters *parameters) {
   } else {
     osc.set_shape(settings.shape());
   }
-  uint16_t parameter_1 = parameters->param1 << 3;
-  parameter_1 += static_cast<uint32_t>(ad_value) * ad_timbre_amount >> 9;
-  if (parameter_1 > 32767) {
-    parameter_1 = 32767;
+  
+  // Set timbre and color: CV + internal modulation.
+  uint16_t parameters[2];
+  for (uint16_t i = 0; i < 2; ++i) {
+    uint16_t value = block_parameters->parameters[i] << 3;
+    Setting ad_mod_setting = i == 0 ? SETTING_AD_TIMBRE : SETTING_AD_COLOR;
+    value += ad_value * settings.GetValue(ad_mod_setting) >> 5;
+    if (value > 32767) value = 32767;
+    parameters[i] = value;
   }
-  osc.set_parameters(parameter_1, parameters->param2 << 3);
+  osc.set_parameters(parameters[0], parameters[1]);
   
   // Apply hysteresis to ADC reading to prevent a single bit error to move
   // the quantized pitch up and down the quantization boundary.
-  int32_t pitch_adc_code = parameters->pitch;
-  if (settings.pitch_quantization()) {
-    if ((pitch_adc_code > previous_pitch_adc_code + 4) ||
-        (pitch_adc_code < previous_pitch_adc_code - 4)) {
-      previous_pitch_adc_code = pitch_adc_code;
-    } else {
-      pitch_adc_code = previous_pitch_adc_code;
-    }
-  }
-  int32_t pitch = pitch_adc_code; // settings.adc_to_pitch(pitch_adc_code);
-  if (settings.pitch_quantization() == PITCH_QUANTIZATION_QUARTER_TONE) {
-    pitch = (pitch + 32) & 0xffffffc0;
-  } else if (settings.pitch_quantization() == PITCH_QUANTIZATION_SEMITONE) {
-    pitch = (pitch + 64) & 0xffffff80;
-  }
+  int32_t pitch = quantizer.Process(
+      block_parameters->pitch,
+      (60 + settings.quantizer_root()) << 7);
   if (!settings.meta_modulation()) {
-    pitch += settings.adc_to_fm(parameters->fm);
+    pitch += settings.adc_to_fm(block_parameters->fm);
   }
-  pitch += parameters->pitch_fine >> 8;
-  
   // Check if the pitch has changed to cause an auto-retrigger
   int32_t pitch_delta = pitch - previous_pitch;
   if (settings.data().auto_trig &&
@@ -263,21 +249,17 @@ void RenderBlock(const Parameters *parameters) {
   }
   previous_pitch = pitch;
   
-  if (settings.vco_drift()) {
-    int16_t jitter = jitter_source.Render(parameters->param2 << 3);
-    pitch += (jitter >> 8);
-  }
-
-  if (pitch > 32767) {
-    pitch = 32767;
+  pitch += jitter_source.Render(settings.vco_drift());
+  pitch += block_parameters->pitch_fine >> 8;
+  pitch += ad_value * settings.GetValue(SETTING_AD_FM) >> 7;
+  
+  if (pitch > 16383) {
+    pitch = 16383;
   } else if (pitch < 0) {
     pitch = 0;
   }
   
   if (settings.vco_flatten()) {
-    if (pitch > 16383) {
-      pitch = 16383;
-    }
     pitch = Interpolate88(lut_vco_detune, pitch << 2);
   }
   osc.set_pitch(pitch + settings.pitch_transposition());
@@ -288,14 +270,17 @@ void RenderBlock(const Parameters *parameters) {
     ui.StepMarquee();
     trigger_flag = false;
   }
-
-  uint8_t destination = settings.GetValue(SETTING_TRIG_DESTINATION);
+  
   uint8_t* sync_buffer = sync_samples[render_block];
   int16_t* render_buffer = audio_samples[render_block];
-  if (destination == 1) {
-    // Disable hardsync when the trigger is used for envelopes.
+  
+  if (settings.GetValue(SETTING_AD_VCA) != 0
+    || settings.GetValue(SETTING_AD_TIMBRE) != 0
+    || settings.GetValue(SETTING_AD_COLOR) != 0
+    || settings.GetValue(SETTING_AD_FM) != 0) {
     memset(sync_buffer, 0, kBlockSize);
   }
+  
   osc.Render(sync_buffer, render_buffer, kBlockSize);
   
 #ifdef DAC_TEST
@@ -307,31 +292,37 @@ void RenderBlock(const Parameters *parameters) {
   int16_t sample = 0;
   size_t decimation_factor = decimation_factors[settings.data().sample_rate];
   uint16_t bit_mask = bit_reduction_masks[settings.data().resolution];
-  int32_t gain = settings.GetValue(SETTING_TRIG_DESTINATION) & 2
-      ? ad_value : 65535;
+  int32_t gain = settings.GetValue(SETTING_AD_VCA) ? ad_value : 65535;
+  uint16_t signature = settings.signature() * settings.signature() * 4095;
   for (size_t i = 0; i < kBlockSize; ++i) {
     if ((i % decimation_factor) == 0) {
       sample = render_buffer[i] & bit_mask;
-      if (settings.signature()) {
-        sample = ws.Transform(sample);
-      }
     }
-    render_buffer[i] = static_cast<int32_t>(sample) * gain >> 16;
+    sample = sample * gain_lp >> 16;
+    gain_lp += (gain - gain_lp) >> 4;
+    int16_t warped = ws.Transform(sample);
+    render_buffer[i] = Mix(sample, warped, signature);
   }
 #endif
   render_block = (render_block + 1) % kNumBlocks;
-  
-  MEASURE_SCOPE_END();
+
+#ifdef PROFILE_RENDER
+  debug_pin.Low();
+#endif
 }
 
 int main(void) {
   Init();
   Parameters parameters;
   while (1) {
+    if (current_scale != settings.GetValue(SETTING_QUANTIZER_SCALE)) {
+      current_scale = settings.GetValue(SETTING_QUANTIZER_SCALE);
+      quantizer.Configure(scales[current_scale]);
+    }
     while (render_block != playback_block) {
-      MEASURE_SCOPE_BEGIN(debug_pin);
+      PROFILE_SCOPE_BEGIN(debug_pin);
       cv_scaler.Read(&parameters);
-      MEASURE_SCOPE_END();
+      PROFILE_SCOPE_END();
       RenderBlock(&parameters);
     }
     ui.DoEvents();

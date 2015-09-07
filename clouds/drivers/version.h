@@ -1,4 +1,4 @@
-// Copyright 2012 Olivier Gillet.
+// Copyright 2014 Olivier Gillet.
 //
 // Author: Olivier Gillet (ol.gillet@gmail.com)
 //
@@ -24,57 +24,39 @@
 //
 // -----------------------------------------------------------------------------
 //
-// A noise source used to add jitter to the VCO.
+// Driver for reading the hardware revision pin.
 
-#ifndef BRAIDS_VCO_JITTER_SOURCE_H_
-#define BRAIDS_VCO_JITTER_SOURCE_H_
+#ifndef CLOUDS_DRIVERS_VERSION_H_
+#define CLOUDS_DRIVERS_VERSION_H_
 
 #include "stmlib/stmlib.h"
 
-#include <cstring>
+#include <stm32f4xx_conf.h>
 
-#include "braids/resources.h"
-#include "stmlib/utils/dsp.h"
-#include "stmlib/utils/random.h"
+namespace clouds {
 
-namespace braids {
-
-using namespace stmlib;
-
-class VcoJitterSource {
+class Version {
  public:
-  VcoJitterSource() { }
-  ~VcoJitterSource() { }
+  Version() { }
+  ~Version() { }
+  static void Init() {
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
   
-  inline void Init() {
-    external_temperature_ = 0;
-    room_temperature_ = 0;
-    phase_ = 0;
-    phase_step_ = 0;
+    GPIO_InitTypeDef gpio_init;
+    gpio_init.GPIO_Pin = GPIO_Pin_0;
+    gpio_init.GPIO_Mode = GPIO_Mode_IN;
+    gpio_init.GPIO_OType = GPIO_OType_PP;
+    gpio_init.GPIO_Speed = GPIO_Speed_25MHz;
+    gpio_init.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(GPIOB, &gpio_init);
   }
-  
-  inline int16_t Render(int32_t intensity) {
-    // External temperature change, with 1-order filtering.
-    uint16_t external_temperature_toss = Random::GetWord();
-    if (external_temperature_toss == 0) {
-      phase_step_ = phase_step_ * 1664525L + 1013904223L;
-      phase_ += (phase_step_ >> 16) * (phase_step_ >> 16);
-      external_temperature_ = wav_sine[phase_ >> 24] << 8;
-    }
-    room_temperature_ += (external_temperature_ - room_temperature_) >> 16;
-    int32_t pitch_noise = room_temperature_ * intensity >> 19;
-    return pitch_noise;
+  static inline bool revised() {
+    return !GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0);
   }
-  
  private:
-  uint32_t phase_step_;
-  uint32_t phase_;
-  int32_t external_temperature_;
-  int32_t room_temperature_;
-   
-  DISALLOW_COPY_AND_ASSIGN(VcoJitterSource);
+  DISALLOW_COPY_AND_ASSIGN(Version);
 };
 
-}  // namespace braids
+}  // namespace clouds
 
-#endif // BRAIDS_VCO_JITTER_SOURCE_H_
+#endif  // CLOUDS_DRIVERS_VERSION_H_

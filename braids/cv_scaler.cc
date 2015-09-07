@@ -82,11 +82,11 @@ void CvScaler::Read(Parameters *parameters) {
       + attenuvert(2 * readCvBi<ADC_PARAM1_CV>(),
                    readPot<ADC_MOD_POT, -32768>());
   CONSTRAIN(value, 0, 65535)
-  parameters->param1 = value >> 4;
+  parameters->parameters[0] = value >> 4;
 
   value = readPot<ADC_PARAM2_POT, 0>() + 2 * readCvBi<ADC_PARAM2_CV>();
   CONSTRAIN(value, 0, 65535)
-  parameters->param2 = value >> 4;
+  parameters->parameters[1] = value >> 4;
 
   // trigger next ADC scan
   adc_.Convert();

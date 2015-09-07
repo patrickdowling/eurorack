@@ -44,9 +44,7 @@ struct Parameters {
   int32_t pitch_fine;
   int32_t fm; // already offset
 
-  uint16_t param1;
-  uint16_t param2;  
-
+  uint16_t parameters[2];
 };
 
 class CvScaler {
