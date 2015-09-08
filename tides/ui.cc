@@ -81,6 +81,7 @@ void Ui::SaveState() {
   settings_.mode = generator_->mode();
   settings_.range = generator_->range();
   settings_.sync = generator_->sync();
+  settings_.quantize = cv_scaler_->quantize_;
   mode_storage.ParsimoniousSave(settings_, &version_token_);
 }
 
