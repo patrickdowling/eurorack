@@ -74,6 +74,9 @@ Storage<0x8020000, 4> storage;
 stmlib::Storage<1> storage;
 #endif
 
+
+static const char kMagicByte = 'H';
+
 void Settings::Init() {
   if (!storage.ParsimoniousLoad(&data_, &version_token_)) {
     Reset();
@@ -87,14 +90,12 @@ void Settings::Init() {
         value >= setting_metadata.min_value && \
         value <= setting_metadata.max_value;
   }
-  settings_within_range = settings_within_range && data_.magic_byte == 'M';
+  settings_within_range = settings_within_range && data_.magic_byte == kMagicByte;
   if (!settings_within_range) {
     Reset();
   }
   CheckPaques();
 }
-
-static const char kMagicByte = 'H';
 
 void Settings::Reset() {
   memcpy(&data_, &kInitSettings, sizeof(SettingsData));
