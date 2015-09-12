@@ -6,11 +6,14 @@
 namespace braids {
 
 void CvScaler::Init(CalibrationData *calibration_data) {
-  adc_.Init();
+  cv_adc_.Init();
+  pot_adc_.Init();
   calibration_data_ = calibration_data;
+  scan_ = 0;
 
-  std::fill(smoothed_, smoothed_ + ADC_CHANNEL_LAST, 0);
-  std::fill(locked_, locked_ + ADC_CHANNEL_LAST, 0);
+  std::fill(smoothed_, smoothed_ + POT_LAST, 0);
+  std::fill(locked_, locked_ + POT_LAST, 0);
+
   locked_mask_ = 0;
   snapped_mask_ = 0;
 }
@@ -48,48 +51,44 @@ void CvScaler::Read(Parameters *parameters) {
 
   // separate reading/smoothing from scaling/offsets to allow locking/re-use
   // of channels for other things (e.g. UI value setting)
-  adc_read<ADC_VOCT_CV, 1>();
-  adc_read<ADC_FM_CV, 1>();
-  adc_read<ADC_PARAM1_CV, 1>();
-  adc_read<ADC_PARAM2_CV, 1>();
 
-  adc_read<ADC_PITCH_POT, 4>();
-  adc_read<ADC_FINE_POT, 64>();
-  adc_read<ADC_FM_POT, 8>();
-  adc_read<ADC_PARAM1_POT, 4>();
-  adc_read<ADC_MOD_POT, 4>();
-  adc_read<ADC_PARAM2_POT, 4>();
+  pot_smooth<POT_PITCH, 32>();
+  pot_smooth<POT_FINE, 64>();
+  pot_smooth<POT_FM, 16>();
+  pot_smooth<POT_PARAM1, 16>();
+  pot_smooth<POT_MOD, 16>();
+  pot_smooth<POT_PARAM2, 16>();
 
+  // trigger next ADC scan
+  pot_adc_.Convert();
+  cv_adc_.Sample();
 
-  int32_t pitch_cv = readCvUni<ADC_VOCT_CV>() >> 4;
-  int32_t pitch_coarse = readPot<ADC_PITCH_POT, 0>() >> 4;
+  int32_t pitch_cv = readCvUni<CV_ADC_VOCT>();
+  int32_t pitch_coarse = readPot<POT_PITCH, 0>();
 
   parameters->pitch = adc_to_pitch(pitch_cv, pitch_coarse);
 
   // expects int32_t, No shift required
-  parameters->pitch_fine = readPot<ADC_FINE_POT, -32768>();
+  parameters->pitch_fine = readPot<POT_FINE, -32768>();
 
   // TODO used calibrated offset?
-  int32_t fm = attenuvert(readCvBi<ADC_FM_CV>(),
-                          readPot<ADC_FM_POT, -32768>());
+  int32_t fm = attenuvert(readCvBi<CV_ADC_FM>(),
+                          readPot<POT_FM, -32768>());
   parameters->fm = stmlib::Clip16(fm) >> 4;
 
   int32_t value;
 
   // cv input is 10v (-5,5), so scale x 2 to allow full range change for (-5,0) and (0,5)
 
-  value = readPot<ADC_PARAM1_POT, 0>()
-      + attenuvert(2 * readCvBi<ADC_PARAM1_CV>(),
-                   readPot<ADC_MOD_POT, -32768>());
+  value = readPot<POT_PARAM1, 0>()
+      + attenuvert(2 * readCvBi<CV_ADC_PARAM1>(),
+                   readPot<POT_MOD, -32768>());
   CONSTRAIN(value, 0, 65535)
   parameters->parameters[0] = value >> 4;
 
-  value = readPot<ADC_PARAM2_POT, 0>() + 2 * readCvBi<ADC_PARAM2_CV>();
+  value = readPot<POT_PARAM2, 0>() + 2 * readCvBi<CV_ADC_PARAM2>();
   CONSTRAIN(value, 0, 65535)
   parameters->parameters[1] = value >> 4;
-
-  // trigger next ADC scan
-  adc_.Convert();
 }
 
 int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
@@ -119,11 +118,11 @@ int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
     pitch = pitch_cv + pitch_coarse;
   }
 
-  return pitch;
+  return pitch >> 4;
 }
 
 void CvScaler::LockChannels(uint16_t mask) {
-  std::copy(smoothed_, smoothed_ + ADC_CHANNEL_LAST, locked_);
+  std::copy(smoothed_, smoothed_ + POT_LAST, locked_);
   locked_mask_ = mask;
 }
 

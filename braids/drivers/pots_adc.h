@@ -1,4 +1,4 @@
-// Copyright 2015 Patrick Dowling.
+// Copyright 2015 Patrick Dowling
 //
 // Author: Patrick Dowling (pld@gurkenkiste.com)
 //
@@ -21,54 +21,56 @@
 // THE SOFTWARE.
 // 
 // See http://creativecommons.org/licenses/MIT/ for more information.
+//
+// -----------------------------------------------------------------------------
+//
+// Driver for pots ADC.
 
-#ifndef BRAIDS_DRIVERS_PLATFORM_H_
-#define BRAIDS_DRIVERS_PLATFORM_H_
+#ifndef BRAIDS_DRIVERS_POTS_ADC_H_
+#define BRAIDS_DRIVERS_POTS_ADC_H_
 
-// TODO
-// stm lib has the function GPIO_SetBits but original Braids source used direct
-// register toggling. This their ugly child.
-
-#ifdef STM32F4XX
-#include <stm32f4xx_conf.h>
-
-#define GPIO_SET(gpio,pins) \
-do { gpio->BSRRL = pins; } while(0)
-
-#define GPIO_RESET(gpio,pins) \
-do { gpio->BSRRH = pins; } while(0)
-
-#define PLATFORM_TIM1_UP_IRQn TIM1_UP_TIM10_IRQn
-#define PLATFORM_TIM1_UP_IRQHandler TIM1_UP_TIM10_IRQHandler
-
-#else
-#include <stm32f10x_conf.h>
-
-#define GPIO_SET(gpio,pins) \
-do { gpio->BSRR = pins; } while(0)
-
-#define GPIO_RESET(gpio,pins) \
-do { gpio->BRR = pins; } while(0)
-
-#define PLATFORM_TIM1_UP_IRQn TIM1_UP_IRQn
-#define PLATFORM_TIM1_UP_IRQHandler TIM1_UP_IRQHandler
-
-#endif
-
-typedef uint16_t gpio_pin_t;
+#include "stmlib/stmlib.h"
 
 namespace braids {
 
-struct AdcChannelDesc {
-  GPIO_TypeDef *gpio;
-  gpio_pin_t pin;
-  uint8_t channel;
-  uint8_t sample_time;
+enum Potentiometer {
+  POT_PITCH,
+  POT_FINE,
+  POT_FM,
+  POT_PARAM1,
+  POT_MOD,
+  POT_PARAM2,
+  POT_LAST
 };
 
-static const uint32_t ADC_Prescaler = ADC_Prescaler_Div8;
-static const uint32_t ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_20Cycles;
+class PotsAdc {
+ public:
+  PotsAdc() { }
+  ~PotsAdc() { }
+  
+  void Init();
+  void DeInit();
+  void Convert();
 
-} // namespace braids
+  inline float float_value(size_t channel) const {
+    return static_cast<float>(values_[channel]) / 65536.0f;
+  }
 
-#endif // BRAIDS_DRIVERS_PLATFORM_H_
+  inline uint16_t value(size_t channel) const {
+    return values_[channel];
+  }
+
+  inline const uint16_t* values() const {
+    return &values_[0];
+  }
+
+ private:
+
+  uint16_t values_[POT_LAST];
+  
+  DISALLOW_COPY_AND_ASSIGN(PotsAdc);
+};
+
+}  // namespace braids
+
+#endif  // BRAIDS_DRIVERS_POTS_ADC_H_

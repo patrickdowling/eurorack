@@ -133,22 +133,22 @@ void Ui::RefreshDisplay() {
           char text[] = "    ";
           if (!blink_) {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
-              if (cv_index_ + i < ADC_CHANNEL_LAST) {
-                text[i] = '\x90' + ((cv_scaler_->adc_value(cv_index_ + i) >> 4) * 7 >> 12);
-              }
-            display_.set_decimal_hex(cv_index_ / kDisplayWidth + 1);
+              text[i] = '\x90' + ((cv_scaler_->cv_value(i) >> 4) * 7 >> 12);
             }
           }
           display_.Print(text);
         } else if (setting_ == SETTING_CV_DEBUG) {
           if (!blink_) {
-            PrintDebugHex(cv_scaler_->adc_value(cv_index_));
+            if (cv_index_ < CV_ADC_CHANNEL_LAST)
+              PrintDebugHex(cv_scaler_->cv_value(cv_index_));
+            else
+              PrintDebugHex(cv_scaler_->pot_value(cv_index_ - CV_ADC_CHANNEL_LAST));
             display_.set_decimal_hex(cv_index_ + 1);
           }
         } else if (setting_ == SETTING_MARQUEE) {
           uint8_t length = strlen(settings.marquee_text());
           uint8_t padded_length = length + 2 * kDisplayWidth - 4;
-          uint8_t position = ((cv_scaler_->adc_value(0) >> 4 >> 4) * (padded_length - 1)) >> 8;
+          uint8_t position = ((cv_scaler_->cv_value(0) >> 4 >> 4) * (padded_length - 1)) >> 8;
           position += (marquee_step_ % padded_length);
           position += 1;
           char text[] = "    ";
@@ -223,9 +223,9 @@ void Ui::OnLongClick() {
 }
 
 static const uint16_t UI_LOCKED_POT_MASK = \
-    (0x1 << ADC_FINE_POT) |
-    (0x1 << ADC_PITCH_POT) |
-    (0x1 << ADC_FM_POT);
+    (0x1 << POT_FINE) |
+    (0x1 << POT_PITCH) |
+    (0x1 << POT_FM);
 
 void Ui::OnClick() {
   switch (mode_) {
@@ -269,11 +269,10 @@ void Ui::OnClick() {
         mode_ = MODE_SPLASH;
         cv_scaler_->UnlockChannels();
       } else if (setting_ == SETTING_CV_TESTER) {
-        cv_index_ += kDisplayWidth;
-        if (cv_index_ >= ADC_CHANNEL_LAST)
-          cv_index_ = 0;
+        // just shows CV values
+        cv_index_ = 0;
       } else if (setting_ == SETTING_CV_DEBUG) {
-        cv_index_ = (cv_index_ + 1) % ADC_CHANNEL_LAST;
+        cv_index_ = (cv_index_ + 1) % (CV_ADC_CHANNEL_LAST + POT_LAST);
       }
       break;
 

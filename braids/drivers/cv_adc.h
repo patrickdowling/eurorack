@@ -25,35 +25,31 @@
 // -----------------------------------------------------------------------------
 //
 // Driver for ADC.
+// Originally internal_adc.h
 
-#ifndef BRAIDS_DRIVERS_INTERNAL_ADC_H_
-#define BRAIDS_DRIVERS_INTERNAL_ADC_H_
+#ifndef BRAIDS_DRIVERS_CV_ADC_H_
+#define BRAIDS_DRIVERS_CV_ADC_H_
 
 #include "stmlib/stmlib.h"
 
 namespace braids {
 
-enum AdcChannel {
-  ADC_VOCT_CV,
-  ADC_FM_CV,
-  ADC_PARAM1_CV,
-  ADC_PARAM2_CV,
-  ADC_PITCH_POT,
-  ADC_FINE_POT,
-  ADC_FM_POT,
-  ADC_PARAM1_POT,
-  ADC_MOD_POT,
-  ADC_PARAM2_POT,
-  ADC_CHANNEL_LAST,
-  ADC_POT_FIRST = ADC_PITCH_POT,
-  ADC_POT_LAST = ADC_CHANNEL_LAST,
-  ADC_POT_CHANNELS =  ADC_POT_LAST - ADC_POT_FIRST
+enum CvAdcChannel {
+  CV_ADC_VOCT,
+  CV_ADC_FM,
+  CV_ADC_PARAM1,
+  CV_ADC_PARAM2,
+  CV_ADC_CHANNEL_LAST,
 };
 
-class InternalAdc {
+enum {
+  CV_ADC_OVERSAMPLE = 4
+};
+
+class CvAdc {
  public:
-  InternalAdc() { }
-  ~InternalAdc() { }
+  CvAdc() { }
+  ~CvAdc() { }
   
   void Init();
   void DeInit();
@@ -63,21 +59,32 @@ class InternalAdc {
     return static_cast<float>(values_[channel]) / 65536.0f;
   }
 
-  inline uint16_t raw_value(size_t channel) const {
+  void Sample() {
+    for (size_t channel = 0; channel < CV_ADC_CHANNEL_LAST; ++channel) {
+      uint32_t value = raw_values_[channel];
+      value += raw_values_[channel + (1 * CV_ADC_CHANNEL_LAST)];
+      value += raw_values_[channel + (2 * CV_ADC_CHANNEL_LAST)];
+      value += raw_values_[channel + (3 * CV_ADC_CHANNEL_LAST)];
+      values_[channel] = value / CV_ADC_OVERSAMPLE;
+    }
+  }
+
+  inline uint16_t value(size_t channel) const {
     return values_[channel];
   }
 
-  inline const uint16_t* raw_values() const {
+  inline const uint16_t* values() const {
     return &values_[0];
   }
 
  private:
 
-  uint16_t values_[ADC_CHANNEL_LAST];
+  uint16_t raw_values_[CV_ADC_CHANNEL_LAST * CV_ADC_OVERSAMPLE];
+  uint16_t values_[CV_ADC_CHANNEL_LAST];
   
-  DISALLOW_COPY_AND_ASSIGN(InternalAdc);
+  DISALLOW_COPY_AND_ASSIGN(CvAdc);
 };
 
 }  // namespace braids
 
-#endif  // BRAIDS_DRIVERS_INTERNAL_ADC_H_
+#endif  // BRAIDS_DRIVERS_CV_ADC_H_

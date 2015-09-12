@@ -32,7 +32,8 @@
 
 #include "stmlib/stmlib.h"
 #include "braids/settings.h"
-#include "braids/drivers/internal_adc.h"
+#include "braids/drivers/cv_adc.h"
+#include "braids/drivers/pots_adc.h"
 
 namespace braids {
 
@@ -56,12 +57,16 @@ public:
 
   void Read(Parameters *parameters);
 
-  inline uint16_t adc_value(size_t channel) const {
-    return adc_.raw_value(channel);
+  inline uint16_t cv_value(size_t channel) const {
+    return cv_adc_.value(channel);
   }
 
-  inline const uint16_t *raw_values() const {
-    return adc_.raw_values();
+  inline const uint16_t *cv_values() const {
+    return cv_adc_.values();
+  }
+
+  inline uint16_t pot_value(size_t channel) const {
+    return pot_adc_.value(channel);
   }
 
   inline const int32_t *smoothed_values() const {
@@ -69,16 +74,16 @@ public:
   }
 
   void CalibrateOffsets() {
-    std::copy(adc_.raw_values() + ADC_PITCH_POT, adc_.raw_values() + ADC_CHANNEL_LAST, calibration_data_->offset);
+    //std::copy(adc_.raw_values() + ADC_PITCH_POT, adc_.raw_values() + ADC_CHANNEL_LAST, calibration_data_->offset);
   }
 
   void Calibrate1V() {
-    cv_c2_ = adc_.raw_values()[ADC_VOCT_CV] >> 4;
+    cv_c2_ = cv_adc_.value(CV_ADC_VOCT) >> 4;
   }
 
   bool Calibrate3V() {
     int32_t c2 = cv_c2_;
-    int32_t c4 = adc_.raw_values()[ADC_VOCT_CV] >> 4;
+    int32_t c4 = cv_adc_.value(CV_ADC_VOCT) >> 4;
 
     if (c4 != c2) {
       int32_t scale = (24 * 128 * 4096L) / (c4 - c2);
@@ -96,57 +101,59 @@ public:
 
 private:
 
-  InternalAdc adc_;
+  CvAdc cv_adc_;
+  PotsAdc pot_adc_;
   CalibrationData *calibration_data_;
 
+  uint32_t scan_;
   int32_t cv_c2_;
 
   // WIP
-  int32_t smoothed_[ADC_CHANNEL_LAST]; // smoothed values, 16 bit
-  int32_t locked_[ADC_CHANNEL_LAST];
+  int32_t smoothed_[POT_LAST]; // smoothed pot values, 16 bit
+  int32_t locked_[POT_LAST];
   uint16_t locked_mask_;
   uint16_t snapped_mask_;
 
-  template <AdcChannel channel, int32_t offset>
+  template <Potentiometer pot, int32_t offset>
   int32_t readPot() {
-    return read<channel>() + offset;
+    return read<pot>() + offset;
   }
 
-  template <AdcChannel channel>
+  template <CvAdcChannel channel>
   int32_t readCvUni() {
-    return 65535 - smoothed_[channel];
+    return 65535 - cv_adc_.value(channel);
   }
 
-  template <AdcChannel channel>
+  template <CvAdcChannel channel>
   int32_t readCvBi() {
-    return 32767 - smoothed_[channel];
+    return 32767 - cv_adc_.value(channel);
   }
 
-  template <AdcChannel channel, int32_t samples>
-  int32_t adc_read() {
-    int32_t value = adc_.raw_value(channel);
-    const int32_t smoothed = (smoothed_[channel] * (samples - 1) + value) / samples;
-    smoothed_[channel] = smoothed;
+  template <Potentiometer pot, int32_t samples>
+  int32_t pot_smooth() {
+    const int32_t value = pot_adc_.value(pot);
+    const int32_t smoothed = (smoothed_[pot] * (samples - 1) + value) / samples;
+    smoothed_[pot] = smoothed;
     return smoothed;
   }
 
-  template <AdcChannel channel>
+  template <Potentiometer pot>
   int32_t read() {
-    const uint16_t channel_mask = 0x1 << channel;
+    const uint16_t channel_mask = 0x1 << pot;
     if (locked_mask_ & channel_mask) {
-      return locked_[channel];
+      return locked_[pot];
     } else {
       if (!(snapped_mask_ & channel_mask)) {
-        return smoothed_[channel];
+        return smoothed_[pot];
       } else {
-        int32_t delta = locked_[channel] - smoothed_[channel];
+        int32_t delta = locked_[pot] - smoothed_[pot];
         if ( delta < 0 )
           delta = -delta;
-        if ( delta <= 2 ) {
+        if ( delta <= 4 ) {
           snapped_mask_ &= ~channel_mask;
-          return smoothed_[channel];
+          return smoothed_[pot];
         } else {
-          return locked_[channel];
+          return locked_[pot];
         }
       }
     }

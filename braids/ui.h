@@ -36,7 +36,6 @@
 
 #include "braids/drivers/display.h"
 #include "braids/drivers/encoder.h"
-#include "braids/drivers/internal_adc.h"
 #include "braids/drivers/leds.h"
 #include "braids/drivers/switches.h"
 #include "braids/settings.h"
