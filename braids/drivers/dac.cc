@@ -57,7 +57,6 @@ void Dac::Init() {
   // Initialize SPI
   SPI_InitTypeDef spi_init;
   spi_init.SPI_Direction = SPI_Direction_1Line_Tx;
-//  spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
   spi_init.SPI_Mode = SPI_Mode_Master;
   spi_init.SPI_DataSize = SPI_DataSize_16b;
   spi_init.SPI_CPOL = SPI_CPOL_High;
@@ -70,16 +69,15 @@ void Dac::Init() {
   SPI_Cmd(DAC_SPIX, ENABLE);
 
 #ifdef DAC_USE_DMA
-  dma_buffer_[0] = dma_buffer_[1] = 32768;
-
   RCC_AHB1PeriphClockCmd(DAC_DMA_CLOCK, ENABLE);
+
+  dma_buffer_[0] = dma_buffer_[1] = 32768;
 
   DMA_Cmd(DAC_DMA_STREAM, DISABLE);
   DMA_DeInit(DAC_DMA_STREAM);
-
   dma_init_tx_.DMA_Channel = DAC_DMA_CHANNEL;
   dma_init_tx_.DMA_PeripheralBaseAddr = (uint32_t)&DAC_SPIX->DR;
-  dma_init_tx_.DMA_Memory0BaseAddr = (uint32_t)dma_buffer_;
+  dma_init_tx_.DMA_Memory0BaseAddr = (uint32_t)&dma_buffer_[0];
   dma_init_tx_.DMA_DIR = DMA_DIR_MemoryToPeripheral;
   dma_init_tx_.DMA_BufferSize = 2;
   dma_init_tx_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -95,8 +93,6 @@ void Dac::Init() {
   DMA_Init(DAC_DMA_STREAM, &dma_init_tx_);
 
   SPI_I2S_DMACmd(DAC_SPIX, SPI_I2S_DMAReq_Tx, ENABLE);
-  DMA_Cmd(DAC_DMA_STREAM, ENABLE);
-
 #endif
 }
 

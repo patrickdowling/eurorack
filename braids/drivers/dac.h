@@ -36,13 +36,15 @@
 #define DAC_RCC_SPIX RCC_APB1Periph_SPI3
 #define DAC_AF_SPIX GPIO_AF_SPI3
 
-#define DAC_USE_DMA_DISABLED
+#define DAC_USE_DMA
 
 #ifdef DAC_USE_DMA
 // channel:stream see stm32f4xx reference 10.3.3
 #define DAC_DMA_CLOCK RCC_AHB1Periph_DMA1
-#define DAC_DMA_STREAM  DMA1_Stream4
+#define DAC_DMA DMA1
+#define DAC_DMA_STREAM  DMA1_Stream7
 #define DAC_DMA_CHANNEL DMA_Channel_0
+#define DAC_DMA_FLAG_TC DMA_FLAG_TCIF7
 #endif
 
 namespace braids {
@@ -56,15 +58,17 @@ class Dac {
 
 #ifdef DAC_USE_DMA
   inline void Write(uint16_t value) {
+
     GPIO_SET(GPIOA, kPinSS);
-    DMA_Cmd(DAC_DMA_STREAM, DISABLE);
+    __asm__("nop");
     GPIO_RESET(GPIOA, kPinSS);
 
     dma_buffer_[0] = value >> 8;
     dma_buffer_[1] = value << 8;
 
-    DMA_SetCurrDataCounter(DAC_DMA_STREAM, 2);
-    DMA_Cmd(DAC_DMA_STREAM, ENABLE);
+    DAC_DMA->HIFCR = (uint32_t)(DAC_DMA_FLAG_TC & 0x0F7D0F7D); //DMA_ClearFlag(DAC_DMA_STREAM, DAC_DMA_FLAG_TC);
+    DAC_DMA_STREAM->NDTR = (uint32_t)2; // transfer length
+    DAC_DMA_STREAM->CR |= (uint32_t)DMA_SxCR_EN; //DMA_Cmd(DAC_DMA_STREAM, ENABLE);
   }
 #else
   inline void Write(uint16_t value) {
