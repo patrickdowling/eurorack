@@ -107,12 +107,12 @@ int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
     pitch += pitch_coarse * (48 * 128) >> 12;
   } else if (pitch_range == PITCH_RANGE_FREE) {
   // +/- 4 octave centered around C3
-    pitch = 60 << 7;
+    pitch = 60 << 7 << 4;
     pitch += pitch_coarse * (48 * 128) >> 12;
     pitch += pitch_cv * calibration_data_->pitch_cv_scale >> 12;
   } else if (pitch_range == PITCH_RANGE_440) {
   // locks the oscillator frequency to 440 Hz exactly
-    pitch = 69 << 7;
+    pitch = 69 << 7 << 4;
   } else {
   // XTND (extended) provides a larger frequency range, but disables accurate V/Oct scaling as a side effect.
     pitch = pitch_cv + pitch_coarse;
