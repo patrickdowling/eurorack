@@ -108,9 +108,8 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
     return;
   }
   TIM1->SR = (uint16_t)~TIM_IT_Update;
-
-  // TODO Check fix timing issues
-  dac.Write(audio_samples[playback_block][current_sample] + 32768);
+  
+  dac.Write(-audio_samples[playback_block][current_sample] + 32768);
 
   bool trigger_detected = gate_input.raised();
   sync_samples[playback_block][current_sample] = trigger_detected;
