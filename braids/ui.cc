@@ -95,8 +95,10 @@ void Ui::Poll() {
   if ((sub_clock_ & 1) == 0) {
     display_.Refresh();
   }
+  if (gate_led_time_)
+    --gate_led_time_;
 
-  leds_.set_gate(gate_);
+  leds_.set_gate(gate_ || gate_led_time_);
   leds_.set_status(mode_ != MODE_EDIT || setting_ != SETTING_OSCILLATOR_SHAPE);
   leds_.Write();
 }

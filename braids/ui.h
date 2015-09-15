@@ -57,6 +57,8 @@ enum SwitchIndex {
   SWITCH_GATE,
 };
 
+static const uint8_t kLedGateTime = 0x08;
+
 class CvScaler;
 
 class Ui {
@@ -108,8 +110,12 @@ class Ui {
     meta_shape_ = shape;
   }
 
-  inline bool gate() const {
-    return gate_;
+  inline bool gate_triggered() const {
+    return switches_.just_pressed(SWITCH_GATE);
+  }
+
+  void set_gate_led(bool on) {
+    gate_led_time_ = on ? kLedGateTime : 0;
   }
   
  private:
@@ -150,6 +156,7 @@ class Ui {
   bool marquee_dirty_character_;
   bool blink_;
   bool gate_;
+  uint8_t gate_led_time_;
   
   MacroOscillatorShape meta_shape_;
 

@@ -260,11 +260,17 @@ void RenderBlock(const Parameters *block_parameters) {
   }
   osc.set_pitch(pitch + settings.pitch_transposition());
 
+  // ui trigger ignores delay
+  bool triggered = ui.gate_triggered();
   if (trigger_flag) {
+    triggered = true;
+    trigger_flag = false;
+  }
+  if (triggered) {
     osc.Strike();
     envelope.Trigger(ENV_SEGMENT_ATTACK);
     ui.StepMarquee();
-    trigger_flag = false;
+    ui.set_gate_led(true);
   }
   
   uint8_t* sync_buffer = sync_samples[render_block];
