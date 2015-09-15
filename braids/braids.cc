@@ -182,26 +182,23 @@ const uint16_t bit_reduction_masks[] = {
 
 const uint16_t decimation_factors[] = { 24, 12, 6, 4, 3, 2, 1 };
 
-uint16_t gain_lp;
-
 void RenderBlock(const Parameters *block_parameters) {
   static int32_t previous_pitch = 0;
   static int32_t previous_shape = 0;
+  static uint16_t gain_lp;
 
 #ifdef PROFILE_RENDER
   debug_pin.High();
 #endif
   envelope.Update(
       settings.GetValue(SETTING_AD_ATTACK) * 8,
-      settings.GetValue(SETTING_AD_DECAY) * 8,
-      0, 0);
+      settings.GetValue(SETTING_AD_DECAY) * 8);
   uint32_t ad_value = envelope.Render();
   
   if (ui.paques()) {
     osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
   } else if (settings.meta_modulation()) {
-    int32_t shape = block_parameters->fm;
-    // shape -= settings.data().calibration_data.fm_cv_offset;
+    int16_t shape = block_parameters->fm;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
       previous_shape = shape;
     } else {
