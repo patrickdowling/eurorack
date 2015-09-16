@@ -329,5 +329,6 @@ int main(void) {
       RenderBlock(&parameters);
     }
     ui.DoEvents();
+    ui.PollPots();
   }
 }

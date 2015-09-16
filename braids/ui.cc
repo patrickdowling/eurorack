@@ -54,6 +54,8 @@ void Ui::Init(CvScaler *cv_scaler) {
   setting_index_ = 0;
   cv_index_ = 0;
   gate_ = false;
+  gate_led_time_ = 0;
+  pot_mode_ = POTMODE_NORMAL;
 }
 
 void Ui::Poll() {
@@ -103,12 +105,36 @@ void Ui::Poll() {
   leds_.Write();
 }
 
+void Ui::PollPots() {
+  if (POTMODE_AD == pot_mode_) {
+    int32_t value;
+
+    value = cv_scaler_->ReadPot(POT_FINE) * 16 >> 16;
+    settings.SetValue(SETTING_AD_ATTACK, settings.metadata(SETTING_AD_ATTACK).Clip(value));
+
+    value = cv_scaler_->ReadPot(POT_PITCH) * 16 >> 16;
+    settings.SetValue(SETTING_AD_DECAY, settings.metadata(SETTING_AD_DECAY).Clip(value));
+
+    value = cv_scaler_->ReadPot(POT_FM) * 16 >> 16;
+    settings.SetValue(SETTING_AD_FM, settings.metadata(SETTING_AD_FM).Clip(value));
+
+    value = cv_scaler_->ReadPot(POT_PARAM1) * 16 >> 16;
+    settings.SetValue(SETTING_AD_TIMBRE, settings.metadata(SETTING_AD_TIMBRE).Clip(value));
+
+    value = cv_scaler_->ReadPot(POT_MOD);
+    settings.SetValue(SETTING_AD_VCA, value >= 16384);
+
+    value = cv_scaler_->ReadPot(POT_PARAM2) * 16 >> 16;
+    settings.SetValue(SETTING_AD_COLOR, settings.metadata(SETTING_AD_COLOR).Clip(value));
+  }
+}
+
 void Ui::FlushEvents() {
   queue_.Flush();
 }
 
 void Ui::RefreshDisplay() {
-  display_.clear_decimals(); // TODO dirty ;)
+  uint16_t decimal_hex = 0; // TODO dirty ;)
   switch (mode_) {
     case MODE_SPLASH:
       {
@@ -126,6 +152,8 @@ void Ui::RefreshDisplay() {
           value = meta_shape_;
         }
         display_.Print(settings.metadata(setting_).strings[value]);
+        if (pot_mode_)
+          decimal_hex = 0x1 << (pot_mode_ - 1);
       }
       break;
       
@@ -145,7 +173,7 @@ void Ui::RefreshDisplay() {
               PrintDebugHex(cv_scaler_->cv_value(cv_index_));
             else
               PrintDebugHex(cv_scaler_->pot_value(cv_index_ - CV_ADC_CHANNEL_LAST));
-            display_.set_decimal_hex(cv_index_ + 1);
+            decimal_hex = cv_index_ + 1;
           }
         } else if (setting_ == SETTING_MARQUEE) {
           uint8_t length = strlen(settings.marquee_text());
@@ -195,6 +223,7 @@ void Ui::RefreshDisplay() {
     default:
       break;
   }
+  display_.set_decimal_hex(decimal_hex);
 }
 
 void Ui::OnLongClick() {
@@ -338,9 +367,40 @@ void Ui::OnIncrement(const Event& e) {
   }
 }
 
+static const uint16_t LockedPotMask[POT_LAST] = {
+  0, // POTMODE_NORMAL
+  0x3f // POTMODE_AD
+};
+/*
+static int32_t setting_to_pot(Setting setting) {
+  int32_t value = settings.GetValue(setting);
+  const SettingMetadata &metadata = settings.metadata(setting);
+  int32_t range = metadata.max - metadata.min + 1;
+
+  return (value - metadata.min) * 65536 / range;
+}
+*/
 void Ui::OnSwitchPressed(const stmlib::Event &e) {
   switch (static_cast<SwitchIndex>(e.control_id)) {
-    case SWITCH_S1: break;
+    case SWITCH_S1:
+      // a bit brute forcey
+      if (POTMODE_NORMAL == pot_mode_) {
+        pot_mode_ = POTMODE_AD;
+        int32_t values[POT_LAST];
+
+        values[POT_FINE] = static_cast<int32_t>(settings.GetValue(SETTING_AD_ATTACK)) * 66536 / 16;
+        values[POT_PITCH] = static_cast<int32_t>(settings.GetValue(SETTING_AD_DECAY)) * 66536 / 16;
+        values[POT_FM] = static_cast<int32_t>(settings.GetValue(SETTING_AD_FM)) * 66536 / 16;
+        values[POT_PARAM1] = static_cast<int32_t>(settings.GetValue(SETTING_AD_TIMBRE)) * 66536 / 16;
+        values[POT_MOD] = static_cast<int32_t>(settings.GetValue(SETTING_AD_VCA)) * 16384;
+        values[POT_PARAM2] = static_cast<int32_t>(settings.GetValue(SETTING_AD_COLOR)) * 66536 / 16;
+
+        cv_scaler_->LockPots(LockedPotMask[POTMODE_AD], values);
+      } else {
+        pot_mode_ = POTMODE_NORMAL;
+        cv_scaler_->UnlockPots();
+      }
+      break;
     case SWITCH_GATE:
       gate_ = true;
       break;

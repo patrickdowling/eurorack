@@ -52,6 +52,12 @@ enum UiMode {
   MODE_MARQUEE_EDITOR
 };
 
+enum UiPotMode {
+  POTMODE_NORMAL = 0,
+  POTMODE_AD,
+  POTMODE_LAST
+};
+
 enum SwitchIndex {
   SWITCH_S1,
   SWITCH_GATE,
@@ -68,6 +74,7 @@ class Ui {
   
   void Init(CvScaler *cv_scaler);
   void Poll();
+  void PollPots();
   void DoEvents();
   void FlushEvents();
   void Print(const char* text) {
@@ -157,6 +164,7 @@ class Ui {
   bool blink_;
   bool gate_;
   uint8_t gate_led_time_;
+  UiPotMode pot_mode_;
   
   MacroOscillatorShape meta_shape_;
 

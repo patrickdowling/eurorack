@@ -96,8 +96,25 @@ public:
     }
   }
 
-  void LockChannels(uint16_t mask);
-  void UnlockChannels();
+  // Lock pots and set snap values so they can be used for other purposes
+  // Multiple calls to LockPots without UnlockPots will probably cause mayhem
+  void LockPots(uint16_t mask, int32_t *snap);
+
+  // Release locked pots
+  void UnlockPots();
+
+  // Get pot value for locked pot, respecting snap value
+  int32_t ReadPot(Potentiometer pot) {
+    const uint16_t mask = 0x1 << pot;
+    if (locked_mask_ & mask) {
+      if (snapped_mask_ & mask)
+        return snapped_[pot];
+      else
+        return smoothed_[pot];
+    } else {
+      return 0;
+    }
+  }
 
 private:
 
@@ -111,12 +128,24 @@ private:
   // WIP
   int32_t smoothed_[POT_LAST]; // smoothed pot values, 16 bit
   int32_t locked_[POT_LAST];
+  int32_t snapped_[POT_LAST];
+
   uint16_t locked_mask_;
   uint16_t snapped_mask_;
 
   template <Potentiometer pot, int32_t offset>
   int32_t readPot() {
-    return read<pot>() + offset;
+    const uint16_t channel_mask = 0x1 << pot;
+    int32_t value;
+    if (!(locked_mask_ & channel_mask)) {
+      if (!(snapped_mask_ & channel_mask))
+        value = smoothed_[pot];
+      else
+        value = snapped_[pot];
+    } else {
+      value = locked_[pot];
+    }
+    return value + offset;
   }
 
   template <CvAdcChannel channel>
@@ -134,29 +163,17 @@ private:
     const int32_t value = pot_adc_.value(pot);
     const int32_t smoothed = (smoothed_[pot] * (samples - 1) + value) / samples;
     smoothed_[pot] = smoothed;
-    return smoothed;
-  }
 
-  template <Potentiometer pot>
-  int32_t read() {
-    const uint16_t channel_mask = 0x1 << pot;
-    if (locked_mask_ & channel_mask) {
-      return locked_[pot];
-    } else {
-      if (!(snapped_mask_ & channel_mask)) {
-        return smoothed_[pot];
-      } else {
-        int32_t delta = locked_[pot] - smoothed_[pot];
-        if ( delta < 0 )
-          delta = -delta;
-        if ( delta <= 4 ) {
-          snapped_mask_ &= ~channel_mask;
-          return smoothed_[pot];
-        } else {
-          return locked_[pot];
-        }
-      }
+    const uint16_t mask = 0x1 << pot;
+    if (snapped_mask_ & mask) {
+      int32_t delta = snapped_[pot] - smoothed;
+      if (delta < 0)
+        delta = -delta;
+      if (delta <= 0x40)
+        snapped_mask_ &= ~mask;
     }
+
+    return smoothed;
   }
 
   int32_t adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse);

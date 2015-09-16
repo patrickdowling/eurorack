@@ -121,15 +121,17 @@ int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
   return pitch >> 4;
 }
 
-void CvScaler::LockChannels(uint16_t mask) {
+void CvScaler::LockPots(uint16_t mask, int32_t *snap) {
   std::copy(smoothed_, smoothed_ + POT_LAST, locked_);
+  std::copy(snap, snap + POT_LAST, snapped_);
+  snapped_mask_ = mask;
   locked_mask_ = mask;
 }
 
-void CvScaler::UnlockChannels() {
+void CvScaler::UnlockPots() {
+  std::copy(locked_, locked_ + POT_LAST, snapped_);
   snapped_mask_ = locked_mask_;
   locked_mask_ = 0;
 }
-
 
 } // namespace braids
