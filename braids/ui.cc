@@ -224,18 +224,10 @@ void Ui::OnLongClick() {
   }
 }
 
-static const uint16_t UI_LOCKED_POT_MASK = \
-    (0x1 << POT_FINE) |
-    (0x1 << POT_PITCH) |
-    (0x1 << POT_FM);
-
 void Ui::OnClick() {
   switch (mode_) {
     case MODE_EDIT:
       mode_ = MODE_MENU;
-      if (setting_ == SETTING_OSCILLATOR_SHAPE) {
-        cv_scaler_->LockChannels(UI_LOCKED_POT_MASK);
-      }
       break;
       
     case MODE_MARQUEE_EDITOR:
@@ -265,11 +257,9 @@ void Ui::OnClick() {
         mode_ = MODE_EDIT;
         if (setting_ == SETTING_OSCILLATOR_SHAPE) {
           settings.Save();
-          cv_scaler_->UnlockChannels();
         }
       } else if (setting_ == SETTING_VERSION) {
         mode_ = MODE_SPLASH;
-        cv_scaler_->UnlockChannels();
       } else if (setting_ == SETTING_CV_TESTER) {
         // just shows CV values
         cv_index_ = 0;
