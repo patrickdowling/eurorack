@@ -48,7 +48,7 @@ void Ui::Init(CvScaler *cv_scaler) {
   queue_.Init();
   cv_scaler_ = cv_scaler;
   sub_clock_ = 0;
-  value_ = 0;
+  refresh_display_ = true;
   mode_ = MODE_SPLASH;
   setting_ = SETTING_OSCILLATOR_SHAPE;
   setting_index_ = 0;
@@ -105,27 +105,33 @@ void Ui::Poll() {
   leds_.Write();
 }
 
+struct PotSettingMapping {
+  Potentiometer pot;
+  Setting setting;
+  float range; // Most settings are 0-based anyway
+};
+
+static const PotSettingMapping PotMappings[POT_LAST] =
+{
+  { POT_FINE, SETTING_AD_ATTACK, 16.f },
+  { POT_PITCH, SETTING_AD_DECAY, 16.f },
+  { POT_FM, SETTING_AD_FM, 16.f },
+  { POT_PARAM1, SETTING_AD_TIMBRE, 16.f },
+  { POT_MOD, SETTING_AD_VCA, 1.f },
+  { POT_PARAM2, SETTING_AD_COLOR, 16.f }
+};
+
 void Ui::PollPots() {
   if (POTMODE_AD == pot_mode_) {
-    int32_t value;
 
-    value = cv_scaler_->ReadPot(POT_FINE) * 16 >> 16;
-    settings.SetValue(SETTING_AD_ATTACK, settings.metadata(SETTING_AD_ATTACK).Clip(value));
-
-    value = cv_scaler_->ReadPot(POT_PITCH) * 16 >> 16;
-    settings.SetValue(SETTING_AD_DECAY, settings.metadata(SETTING_AD_DECAY).Clip(value));
-
-    value = cv_scaler_->ReadPot(POT_FM) * 16 >> 16;
-    settings.SetValue(SETTING_AD_FM, settings.metadata(SETTING_AD_FM).Clip(value));
-
-    value = cv_scaler_->ReadPot(POT_PARAM1) * 16 >> 16;
-    settings.SetValue(SETTING_AD_TIMBRE, settings.metadata(SETTING_AD_TIMBRE).Clip(value));
-
-    value = cv_scaler_->ReadPot(POT_MOD);
-    settings.SetValue(SETTING_AD_VCA, value >= 16384);
-
-    value = cv_scaler_->ReadPot(POT_PARAM2) * 16 >> 16;
-    settings.SetValue(SETTING_AD_COLOR, settings.metadata(SETTING_AD_COLOR).Clip(value));
+    // TODO This make editing with the encoder impossible since the value is just overwriten
+    for (size_t s = 0; s < POT_LAST; ++s) {
+      const PotSettingMapping &mapping = PotMappings[s];
+      const float value = cv_scaler_->ReadPot(mapping.pot) * mapping.range;
+      settings.SafeSetValue(mapping.setting, static_cast<int16_t>(value + .5f));
+      if (setting_ == mapping.setting && mode_ == MODE_EDIT)
+        refresh_display_ = true;
+    }
   }
 }
 
@@ -153,7 +159,7 @@ void Ui::RefreshDisplay() {
         }
         display_.Print(settings.metadata(setting_).strings[value]);
         if (pot_mode_)
-          decimal_hex = 0x1 << (pot_mode_ - 1);
+          decimal_hex = 0x1 << (3 - pot_mode_); // LTR
       }
       break;
       
@@ -297,7 +303,6 @@ void Ui::OnClick() {
       }
       break;
 
-    // TODO These probably aren't right!    
     case MODE_CALIBRATION_STEP_1:
       cv_scaler_->CalibrateOffsets();
       mode_ = MODE_CALIBRATION_STEP_2;
@@ -311,7 +316,6 @@ void Ui::OnClick() {
     case MODE_CALIBRATION_STEP_3:
       if (cv_scaler_->Calibrate3V()) {
         settings.Save();
-//      settings.Calibrate(dac_code_c2_>>4, dac_code_c4_>>4, cv_[ADC_FM_POT]>>4);
         mode_ = MODE_MENU;
       } else {
         mode_ = MODE_CALIBRATION_STEP_1;
@@ -367,10 +371,11 @@ void Ui::OnIncrement(const Event& e) {
   }
 }
 
-static const uint16_t LockedPotMask[POT_LAST] = {
+static const uint16_t LockedPotMask[POTMODE_LAST] = {
   0, // POTMODE_NORMAL
   0x3f // POTMODE_AD
 };
+
 /*
 static int32_t setting_to_pot(Setting setting) {
   int32_t value = settings.GetValue(setting);
@@ -387,13 +392,11 @@ void Ui::OnSwitchPressed(const stmlib::Event &e) {
       if (POTMODE_NORMAL == pot_mode_) {
         pot_mode_ = POTMODE_AD;
         int32_t values[POT_LAST];
-
-        values[POT_FINE] = static_cast<int32_t>(settings.GetValue(SETTING_AD_ATTACK)) * 66536 / 16;
-        values[POT_PITCH] = static_cast<int32_t>(settings.GetValue(SETTING_AD_DECAY)) * 66536 / 16;
-        values[POT_FM] = static_cast<int32_t>(settings.GetValue(SETTING_AD_FM)) * 66536 / 16;
-        values[POT_PARAM1] = static_cast<int32_t>(settings.GetValue(SETTING_AD_TIMBRE)) * 66536 / 16;
-        values[POT_MOD] = static_cast<int32_t>(settings.GetValue(SETTING_AD_VCA)) * 16384;
-        values[POT_PARAM2] = static_cast<int32_t>(settings.GetValue(SETTING_AD_COLOR)) * 66536 / 16;
+        for (size_t s = 0; s < POT_LAST; ++s ) {
+          const PotSettingMapping &mapping = PotMappings[s];
+          const float value = static_cast<float>(settings.GetValue(mapping.setting)) / mapping.range * 65536.f;
+          values[mapping.pot] = static_cast<int32_t>(value + 0.f);            
+        }
 
         cv_scaler_->LockPots(LockedPotMask[POTMODE_AD], values);
       } else {
@@ -418,7 +421,6 @@ void Ui::OnSwitchReleased(const stmlib::Event &e) {
 }
 
 void Ui::DoEvents() {
-  bool refresh_display_ = false;
   while (queue_.available()) {
     Event e = queue_.PullEvent();
     if (e.control_type == CONTROL_ENCODER_CLICK) {
@@ -464,6 +466,7 @@ void Ui::DoEvents() {
     queue_.Touch();
     RefreshDisplay();
     blink_ = false;
+    refresh_display_ = false;
   }
 }
 

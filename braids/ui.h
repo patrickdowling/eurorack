@@ -139,8 +139,8 @@ class Ui {
   bool inhibit_further_switch_events_;
   uint32_t switch_press_time_[kNumSwitches];
   
-  int16_t value_;
   uint8_t sub_clock_;
+  bool refresh_display_;
   
   UiMode mode_;
   int16_t setting_index_;

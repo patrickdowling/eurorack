@@ -145,10 +145,10 @@ void PLATFORM_TIM1_UP_IRQHandler(void) {
 
 void Init() {
   sys.Init(F_CPU / 96000 - 1, true);
-  system_clock.Init();
   settings.Init();
   cv_scaler.Init(settings.mutable_calibration_data());
   ui.Init(&cv_scaler);
+  system_clock.Init();
   gate_input.Init();
 #ifdef PROFILE_RENDER
   debug_pin.Init();

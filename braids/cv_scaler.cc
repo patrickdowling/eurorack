@@ -53,7 +53,7 @@ void CvScaler::Read(Parameters *parameters) {
   // of channels for other things (e.g. UI value setting)
 
   pot_smooth<POT_PITCH, 32>();
-  pot_smooth<POT_FINE, 64>();
+  pot_smooth<POT_FINE, 32>();
   pot_smooth<POT_FM, 16>();
   pot_smooth<POT_PARAM1, 16>();
   pot_smooth<POT_MOD, 16>();
@@ -120,6 +120,9 @@ int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
 
   return pitch >> 4;
 }
+
+// FIXME SLight bug when Lock -> Unlock -> Lock
+// This needs to respect the values that haven't been re-snapped yet
 
 void CvScaler::LockPots(uint16_t mask, int32_t *snap) {
   std::copy(smoothed_, smoothed_ + POT_LAST, locked_);

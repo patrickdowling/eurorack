@@ -104,15 +104,15 @@ public:
   void UnlockPots();
 
   // Get pot value for locked pot, respecting snap value
-  int32_t ReadPot(Potentiometer pot) {
+  float ReadPot(Potentiometer pot) {
     const uint16_t mask = 0x1 << pot;
     if (locked_mask_ & mask) {
       if (snapped_mask_ & mask)
-        return snapped_[pot];
+        return snapped_[pot] / 65536.f;
       else
-        return smoothed_[pot];
+        return smoothed_[pot] / 65536.f;
     } else {
-      return 0;
+      return 0.f;
     }
   }
 

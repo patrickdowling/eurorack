@@ -218,6 +218,10 @@ class Settings {
   void Save();
   void Reset();
   
+  void SafeSetValue(Setting setting, int16_t value) {
+    SetValue(setting, metadata(setting).Clip(value));
+  }
+
   void SetValue(Setting setting, uint8_t value) {
     uint8_t* data = static_cast<uint8_t*>(static_cast<void*>(&data_));
     data[setting] = value;
