@@ -261,7 +261,7 @@ void RenderBlock(const Parameters *block_parameters) {
   osc.set_pitch(pitch + settings.pitch_transposition());
 
   // ui trigger ignores delay
-  // TODO While this works superficially, gate_triggered is updated in ISR so might be missed
+  // TODO While this works superficially, ui.gate_triggered is updated in ISR so might be missed
   bool triggered = ui.gate_triggered();
   if (trigger_flag) {
     triggered = true;

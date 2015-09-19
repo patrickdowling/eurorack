@@ -9,27 +9,18 @@ void CvScaler::Init(CalibrationData *calibration_data) {
   cv_adc_.Init();
   pot_adc_.Init();
   calibration_data_ = calibration_data;
-  scan_ = 0;
 
-  std::fill(smoothed_, smoothed_ + POT_LAST, 0);
-  std::fill(locked_, locked_ + POT_LAST, 0);
-
-  locked_mask_ = 0;
-  snapped_mask_ = 0;
+  for (size_t pot = 0; pot < POT_LAST; ++pot)
+    pots_[pot].Init();
 }
 
 /*
   Fun things to think about:
   - Instead of int32_t and clipping use SSAT?
-  - re assignable pots & stuff
+  - re-assignable pots & stuff
 
-  Averaging code from internal_adc.h which smooths by factor 2^8?
-  TODO compare with running average?
-
-  int32_t v = (static_cast<int32_t>(adc_.raw_value(ADC_FINE_POT)) - 32768) << 8;
-  int32_t delta = v - smoothed_[ADC_FINE_POT];
-  smoothed_[ADC_FINE_POT] += (delta >> 8);
-  parameters->fine = smoothed_[ADC_FINE_POT] >> 8;
+  TODO Check generated code size/length/smell
+  TODO Check if array of LockableSmoothedPot might be better as struct of arrays
 */
 
 inline int32_t attenuvert(int32_t cv, int32_t attenuverter) {
@@ -52,12 +43,12 @@ void CvScaler::Read(Parameters *parameters) {
   // separate reading/smoothing from scaling/offsets to allow locking/re-use
   // of channels for other things (e.g. UI value setting)
 
-  pot_smooth<POT_PITCH, 32>();
-  pot_smooth<POT_FINE, 32>();
-  pot_smooth<POT_FM, 16>();
-  pot_smooth<POT_PARAM1, 16>();
-  pot_smooth<POT_MOD, 16>();
-  pot_smooth<POT_PARAM2, 16>();
+  UpdatePot<POT_PITCH, 32>();
+  UpdatePot<POT_FINE, 32>();
+  UpdatePot<POT_FM, 32>();
+  UpdatePot<POT_PARAM1, 16>();
+  UpdatePot<POT_MOD, 16>();
+  UpdatePot<POT_PARAM2, 16>();
 
   // trigger next ADC scan
   pot_adc_.Convert();
@@ -121,20 +112,16 @@ int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
   return pitch >> 4;
 }
 
-// FIXME SLight bug when Lock -> Unlock -> Lock
-// This needs to respect the values that haven't been re-snapped yet
-
-void CvScaler::LockPots(uint16_t mask, int32_t *snap) {
-  std::copy(smoothed_, smoothed_ + POT_LAST, locked_);
-  std::copy(snap, snap + POT_LAST, snapped_);
-  snapped_mask_ = mask;
-  locked_mask_ = mask;
+void CvScaler::LockPots(uint16_t mask, int32_t *snap_values) {
+  for (size_t pot = 0; pot < POT_LAST; ++pot, mask >>= 1) {
+    if (mask & 0x1)
+      pots_[pot].Lock(snap_values[pot]);
+   }
 }
 
 void CvScaler::UnlockPots() {
-  std::copy(locked_, locked_ + POT_LAST, snapped_);
-  snapped_mask_ = locked_mask_;
-  locked_mask_ = 0;
+  for (size_t pot = 0; pot < POT_LAST; ++pot)
+    pots_[pot].Unlock();
 }
 
 } // namespace braids

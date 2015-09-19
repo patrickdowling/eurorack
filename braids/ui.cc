@@ -127,7 +127,7 @@ void Ui::PollPots() {
     // TODO This make editing with the encoder impossible since the value is just overwriten
     for (size_t s = 0; s < POT_LAST; ++s) {
       const PotSettingMapping &mapping = PotMappings[s];
-      const float value = cv_scaler_->ReadPot(mapping.pot) * mapping.range;
+      const float value = cv_scaler_->ReadLockedPot(mapping.pot) * mapping.range;
       settings.SafeSetValue(mapping.setting, static_cast<int16_t>(value + .5f));
       if (setting_ == mapping.setting && mode_ == MODE_EDIT)
         refresh_display_ = true;

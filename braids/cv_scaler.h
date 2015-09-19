@@ -48,6 +48,70 @@ struct Parameters {
   uint16_t parameters[2];
 };
 
+// Encapsulate pot smoothing and allow a pot to be used for multiple purposes
+// by providing a locking mechanism. When locked, the pot value is stored and
+// can be retrieved separately from the changing value.
+// To avoid jumps when switching between states pots are snapped to the set
+// value, i.e. the readable value only changes once the pot has been moved
+// passed the snap value (same as Shruti, Peaks).
+
+class LockableSmoothedPot {
+public:
+  void Init() {
+    smoothed_value_ = locked_value_ = snap_value_ = 0;
+    locked_ = false;
+    snapped_ = true;
+  }
+
+  template<int32_t samples>
+  void Update(int32_t value) {
+    const int32_t smoothed = (smoothed_value_ * (samples - 1) + value) / samples;
+    if (!snapped_) {
+      int32_t delta = snap_value_ - smoothed;
+      if (delta < 0)
+        delta = -delta;
+      if (delta <= 0x40)
+        snapped_ = true;
+    }
+    smoothed_value_ = smoothed;
+  }
+
+  void Lock(int32_t snap_value) {
+    locked_value_ = snapped_ ? smoothed_value_ : snap_value_;
+    snap_value_ = snap_value;
+    snapped_ = false;
+    locked_ = true;
+  }
+
+  void Unlock() {
+    if (locked_) {
+      snap_value_ = locked_value_;
+      snapped_ = false;
+      locked_ = false;
+    }
+  }
+
+  // Get value (ignore lock, but respect snap)
+  int32_t value() const {
+    return snapped_ ? smoothed_value_ : snap_value_;
+  }
+
+  // Get value that might be locked (expected to be the "normal" path)
+  int32_t lockable_value() const {
+    if (!locked_)
+      return snapped_ ? smoothed_value_ : snap_value_;
+    else
+      return locked_value_;
+  }
+
+private:
+  int32_t smoothed_value_;
+  int32_t locked_value_;
+  int32_t snap_value_;
+  bool locked_;
+  bool snapped_;
+};
+
 class CvScaler {
 public:
   CvScaler() { }
@@ -61,20 +125,12 @@ public:
     return cv_adc_.value(channel);
   }
 
-  inline const uint16_t *cv_values() const {
-    return cv_adc_.values();
-  }
-
   inline uint16_t pot_value(size_t channel) const {
     return pot_adc_.value(channel);
   }
 
-  inline const int32_t *smoothed_values() const {
-    return smoothed_;
-  }
-
   void CalibrateOffsets() {
-    //std::copy(adc_.raw_values() + ADC_PITCH_POT, adc_.raw_values() + ADC_CHANNEL_LAST, calibration_data_->offset);
+    std::copy(pot_adc_.values(), pot_adc_.values() + POT_LAST, calibration_data_->offset);
   }
 
   void Calibrate1V() {
@@ -98,22 +154,14 @@ public:
 
   // Lock pots and set snap values so they can be used for other purposes
   // Multiple calls to LockPots without UnlockPots will probably cause mayhem
-  void LockPots(uint16_t mask, int32_t *snap);
+  void LockPots(uint16_t mask, int32_t *snap_values);
 
   // Release locked pots
   void UnlockPots();
 
-  // Get pot value for locked pot, respecting snap value
-  float ReadPot(Potentiometer pot) {
-    const uint16_t mask = 0x1 << pot;
-    if (locked_mask_ & mask) {
-      if (snapped_mask_ & mask)
-        return snapped_[pot] / 65536.f;
-      else
-        return smoothed_[pot] / 65536.f;
-    } else {
-      return 0.f;
-    }
+  // Get pot value for locked pot, respecting latch value
+  float ReadLockedPot(Potentiometer pot) {
+    return static_cast<float>(pots_[pot].value()) / 65536.f;
   }
 
 private:
@@ -122,30 +170,13 @@ private:
   PotsAdc pot_adc_;
   CalibrationData *calibration_data_;
 
-  uint32_t scan_;
   int32_t cv_c2_;
 
-  // WIP
-  int32_t smoothed_[POT_LAST]; // smoothed pot values, 16 bit
-  int32_t locked_[POT_LAST];
-  int32_t snapped_[POT_LAST];
-
-  uint16_t locked_mask_;
-  uint16_t snapped_mask_;
+  LockableSmoothedPot pots_[POT_LAST];
 
   template <Potentiometer pot, int32_t offset>
   int32_t readPot() {
-    const uint16_t channel_mask = 0x1 << pot;
-    int32_t value;
-    if (!(locked_mask_ & channel_mask)) {
-      if (!(snapped_mask_ & channel_mask))
-        value = smoothed_[pot];
-      else
-        value = snapped_[pot];
-    } else {
-      value = locked_[pot];
-    }
-    return value + offset;
+    return pots_[pot].lockable_value() + offset;
   }
 
   template <CvAdcChannel channel>
@@ -159,21 +190,8 @@ private:
   }
 
   template <Potentiometer pot, int32_t samples>
-  int32_t pot_smooth() {
-    const int32_t value = pot_adc_.value(pot);
-    const int32_t smoothed = (smoothed_[pot] * (samples - 1) + value) / samples;
-    smoothed_[pot] = smoothed;
-
-    const uint16_t mask = 0x1 << pot;
-    if (snapped_mask_ & mask) {
-      int32_t delta = snapped_[pot] - smoothed;
-      if (delta < 0)
-        delta = -delta;
-      if (delta <= 0x40)
-        snapped_mask_ &= ~mask;
-    }
-
-    return smoothed;
+  void UpdatePot() {
+    pots_[pot].Update<samples>(pot_adc_.value(pot));
   }
 
   int32_t adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse);
