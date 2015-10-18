@@ -235,7 +235,7 @@ void Ui::RefreshDisplay() {
 void Ui::OnLongClick() {
   switch (mode_) {
     case MODE_MARQUEE_EDITOR:
-      settings.Save();
+      settings.SaveState();
       mode_ = MODE_MENU;
       break;
 
@@ -250,7 +250,7 @@ void Ui::OnLongClick() {
         settings.mutable_marquee_text()[length] = '\xA0';
       } else if (setting_ == SETTING_VERSION) {
         settings.Reset();
-        settings.Save();
+        settings.SaveState();
       }
       break;
     
@@ -281,7 +281,7 @@ void Ui::OnClick() {
           marquee_dirty_character_ = false;
         }
         if (settings.marquee_text()[marquee_character_] == '\0') {
-          settings.Save();
+          settings.SaveState();
           mode_ = MODE_MENU;
         }
       }
@@ -291,7 +291,7 @@ void Ui::OnClick() {
       if (setting_ <= SETTING_LAST_EDITABLE_SETTING) {
         mode_ = MODE_EDIT;
         if (setting_ == SETTING_OSCILLATOR_SHAPE) {
-          settings.Save();
+          settings.SaveState();
         }
       } else if (setting_ == SETTING_VERSION) {
         mode_ = MODE_SPLASH;
@@ -315,7 +315,7 @@ void Ui::OnClick() {
 
     case MODE_CALIBRATION_STEP_3:
       if (cv_scaler_->Calibrate3V()) {
-        settings.Save();
+        settings.SaveCalibration();
         mode_ = MODE_MENU;
       } else {
         mode_ = MODE_CALIBRATION_STEP_1;

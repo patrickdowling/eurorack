@@ -31,11 +31,17 @@
 #include <cstring>
 
 #include "stmlib/system/storage.h"
-#include "stmlib/utils/murmurhash3.h"
 
 namespace braids {
 
 using namespace stmlib;
+
+const CalibrationData kInitCalibration = {
+  50, // pitch_cv_offset
+  10754/*15401*/, // pitch_cv_scale
+  2048, // fm_cv_offset
+  {0, 0, 0, 0, 0, 0} // offset
+};
 
 const SettingsData kInitSettings = {
   MACRO_OSC_SHAPE_CSAW,
@@ -49,11 +55,11 @@ const SettingsData kInitSettings = {
   false,  // Meta modulation
   
   PITCH_RANGE_EXTERNAL,
-  2,
+  2, // pitch_octave
   0,  // Quantizer is off
-  false,
-  false,
-  false,
+  false, // vco_flatten
+  false, // vco_drift
+  false, // signature
   
   2,  // Brightness
   0,  // AD attack
@@ -62,25 +68,17 @@ const SettingsData kInitSettings = {
   0,  // AD->COLOR
   0,  // AD->VCA
   0,  // Quantizer root
-  
-  { 50, 10754/*15401*/, 2048 }, // calibration
 
   "GREETINGS FROM MUTABLE INSTRUMENTS *EDIT ME*",
 };
 
-#ifndef STM32F4XX
-Storage<0x8020000, 4> storage;
-#else
-stmlib::Storage<1> storage;
-#endif
-
-
-static const char kMagicByte = 'H';
+ChunkStorage<1, CalibrationData, SettingsData> storage;
 
 void Settings::Init() {
-  if (!storage.ParsimoniousLoad(&data_, &version_token_)) {
+  if (!storage.Init(&calibration_data_, &data_)) {
     Reset();
   }
+
   bool settings_within_range = true;
   for (int32_t i = 0; i <= SETTING_LAST_EDITABLE_SETTING; ++i) {
     const Setting setting = static_cast<Setting>(i);
@@ -90,7 +88,6 @@ void Settings::Init() {
         value >= setting_metadata.min_value && \
         value <= setting_metadata.max_value;
   }
-  settings_within_range = settings_within_range && data_.magic_byte == kMagicByte;
   if (!settings_within_range) {
     Reset();
   }
@@ -98,13 +95,16 @@ void Settings::Init() {
 }
 
 void Settings::Reset() {
+  memcpy(&calibration_data_, &kInitCalibration, sizeof(CalibrationData));
   memcpy(&data_, &kInitSettings, sizeof(SettingsData));
-  data_.magic_byte = kMagicByte;
 }
 
-void Settings::Save() {
-  data_.magic_byte = kMagicByte;
-  storage.ParsimoniousSave(data_, &version_token_);
+void Settings::SaveCalibration() {
+  storage.SavePersistentData();
+}
+
+void Settings::SaveState() {
+  storage.SaveState();
   CheckPaques();
 }
 

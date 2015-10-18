@@ -323,7 +323,7 @@ int main(void) {
       quantizer.Configure(scales[current_scale]);
     }
     while (render_block != playback_block) {
-      PROFILE_SCOPE_BEGIN(debug_pin);
+      PROFILE_SCOPE_BEGIN();
       cv_scaler.Read(&parameters);
       PROFILE_SCOPE_END();
       RenderBlock(&parameters);

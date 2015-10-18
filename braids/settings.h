@@ -158,13 +158,18 @@ enum Setting {
 };
 
 struct CalibrationData {
+  static const uint32_t tag = stmlib::FourCC<1,'C','A','L'>::value;
+
   int32_t pitch_cv_offset;
   int32_t pitch_cv_scale;
   int32_t fm_cv_offset;
   uint16_t offset[POT_LAST];
+
 };
 
 struct SettingsData {
+  static const uint32_t tag = stmlib::FourCC<1,'S','E','T'>::value;
+
   uint8_t shape;
   uint8_t resolution;
   uint8_t sample_rate;
@@ -187,10 +192,7 @@ struct SettingsData {
   uint8_t ad_vca;
   uint8_t quantizer_root;
   
-  CalibrationData calibration_data;
-  
   char marquee_text[63];
-  char magic_byte;
 };
 
 struct SettingMetadata {
@@ -215,7 +217,8 @@ class Settings {
   ~Settings() { }
   
   void Init();
-  void Save();
+  void SaveCalibration();
+  void SaveState();
   void Reset();
   
   void SafeSetValue(Setting setting, int16_t value) {
@@ -285,7 +288,7 @@ class Settings {
   inline SettingsData* mutable_data() { return &data_; }
 
   inline CalibrationData *mutable_calibration_data() {
-    return &data_.calibration_data;
+    return &calibration_data_;
   }
 
   // Notes about scaling/calibration in original code
@@ -305,25 +308,25 @@ class Settings {
     if (adc_code_c4 != adc_code_c2) {
 
       int32_t scale = (24 * 128 * 4096L) / (adc_code_c4 - adc_code_c2);
-      data_.calibration_data.pitch_cv_scale = scale;
+      calibration_data_.pitch_cv_scale = scale;
 
-      data_.calibration_data.pitch_cv_offset = (60 << 7) - 
+      calibration_data_.pitch_cv_offset = (60 << 7) - 
           (scale * ((adc_code_c2 + adc_code_c4) >> 1) >> 12);
-      data_.calibration_data.fm_cv_offset = adc_code_fm;
+      calibration_data_.fm_cv_offset = adc_code_fm;
     }
-    Save();
+    SaveCalibration() ;
   }
   
   inline int32_t adc_to_pitch(int32_t pitch_adc_code) const {
     if (data_.pitch_range == PITCH_RANGE_EXTERNAL ||
         data_.pitch_range == PITCH_RANGE_LFO) {
     // +/- 4 octaves around the note received on the V/Oct input
-      pitch_adc_code = pitch_adc_code * data_.calibration_data.pitch_cv_scale >> 12;
-      pitch_adc_code += data_.calibration_data.pitch_cv_offset;
+      pitch_adc_code = pitch_adc_code * calibration_data_.pitch_cv_scale >> 12;
+      pitch_adc_code += calibration_data_.pitch_cv_offset;
     } else if (data_.pitch_range == PITCH_RANGE_FREE) {
     // +/- 4 octave centered around C3
       pitch_adc_code = (pitch_adc_code - 1638);
-      pitch_adc_code = pitch_adc_code * data_.calibration_data.pitch_cv_scale >> 12;
+      pitch_adc_code = pitch_adc_code * calibration_data_.pitch_cv_scale >> 12;
       pitch_adc_code += 60 << 7;
     } else if (data_.pitch_range == PITCH_RANGE_440) {
     // locks the oscillator frequency to 440 Hz exactly
@@ -343,7 +346,7 @@ class Settings {
   }
   
   inline int32_t adc_to_fm(int32_t fm_adc_code) const {
-    //fm_adc_code -= data_.calibration_data.fm_cv_offset; -> handled by CvScaler
+    //fm_adc_code -= calibration_data_.fm_cv_offset; -> handled by CvScaler
     fm_adc_code = fm_adc_code * 7680 >> 12;
     if (data_.pitch_range == PITCH_RANGE_440) {
       fm_adc_code = 0;
@@ -366,6 +369,7 @@ class Settings {
  private:
   void CheckPaques();
 
+  CalibrationData calibration_data_;
   SettingsData data_;
   
   uint16_t version_token_;

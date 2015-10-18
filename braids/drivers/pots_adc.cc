@@ -28,7 +28,7 @@
 
 #include <algorithm>
 #include "braids/drivers/pots_adc.h"
-#include "braids/drivers//platform.h"
+#include "braids/drivers/platform.h"
 
 namespace braids {
 
