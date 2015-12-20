@@ -75,22 +75,26 @@ const SettingsData kInitSettings = {
 ChunkStorage<1, CalibrationData, SettingsData> storage;
 
 void Settings::Init() {
-  if (!storage.Init(&calibration_data_, &data_)) {
-    Reset();
+ 
+  // ChunkStorage re-formats the storage if the load fails, so we need to have
+  // useful defaults in place already
+  Reset();
+
+  if (storage.Init(&calibration_data_, &data_)) {
+    bool settings_within_range = true;
+    for (int32_t i = 0; i <= SETTING_LAST_EDITABLE_SETTING; ++i) {
+      const Setting setting = static_cast<Setting>(i);
+      const SettingMetadata& setting_metadata = metadata(setting);
+      uint8_t value = GetValue(setting);
+      settings_within_range = settings_within_range && \
+          value >= setting_metadata.min_value && \
+          value <= setting_metadata.max_value;
+    }
+    if (!settings_within_range) {
+      Reset();
+    }
   }
 
-  bool settings_within_range = true;
-  for (int32_t i = 0; i <= SETTING_LAST_EDITABLE_SETTING; ++i) {
-    const Setting setting = static_cast<Setting>(i);
-    const SettingMetadata& setting_metadata = metadata(setting);
-    uint8_t value = GetValue(setting);
-    settings_within_range = settings_within_range && \
-        value >= setting_metadata.min_value && \
-        value <= setting_metadata.max_value;
-  }
-  if (!settings_within_range) {
-    Reset();
-  }
   CheckPaques();
 }
 

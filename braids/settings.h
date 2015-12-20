@@ -158,7 +158,7 @@ enum Setting {
 };
 
 struct CalibrationData {
-  static const uint32_t tag = stmlib::FourCC<1,'C','A','L'>::value;
+  static const uint32_t tag = stmlib::FourCC<'C','A','L',1>::value;
 
   int32_t pitch_cv_offset;
   int32_t pitch_cv_scale;
@@ -168,7 +168,7 @@ struct CalibrationData {
 };
 
 struct SettingsData {
-  static const uint32_t tag = stmlib::FourCC<1,'S','E','T'>::value;
+  static const uint32_t tag = stmlib::FourCC<'S','E','T',1>::value;
 
   uint8_t shape;
   uint8_t resolution;
