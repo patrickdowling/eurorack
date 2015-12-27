@@ -159,7 +159,7 @@ void Ui::RefreshDisplay() {
         }
         display_.Print(settings.metadata(setting_).strings[value]);
         if (pot_mode_)
-          decimal_hex = 0x1 << (3 - pot_mode_); // LTR
+          decimal_hex = 0x8 >> (pot_mode_ - 1); // LTR
       }
       break;
       
@@ -184,7 +184,7 @@ void Ui::RefreshDisplay() {
         } else if (setting_ == SETTING_MARQUEE) {
           uint8_t length = strlen(settings.marquee_text());
           uint8_t padded_length = length + 2 * kDisplayWidth - 4;
-          uint8_t position = ((cv_scaler_->cv_value(0) >> 4 >> 4) * (padded_length - 1)) >> 8;
+          uint8_t position = 0; //((cv_scaler_->cv_value(0) >> 4 >> 4) * (padded_length - 1)) >> 8;
           position += (marquee_step_ % padded_length);
           position += 1;
           char text[] = "    ";
