@@ -37,7 +37,7 @@
 namespace tides {
 
 const int32_t kLongPressDuration = 1000;
-const uint8_t kMagicNumber = 42;
+const uint8_t kMagicNumber = 84;
 
 using namespace stmlib;
 
