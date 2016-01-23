@@ -266,6 +266,13 @@ void Ui::OnSwitchPressed(const Event& e) {
 }
 
 void Ui::OnSwitchReleased(const Event& e) {
+
+  // hack for double presses
+  if (ignore_releases_ > 0) {
+    ignore_releases_--;
+    return;
+  }
+
   if (mode_ == UI_MODE_FACTORY_TESTING) {
     return;
   } else if (mode_ == UI_MODE_PAQUES) {
