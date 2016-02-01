@@ -80,6 +80,7 @@ void SysTick_Handler() {
 
 static uint32_t saw_counter = 0;
 
+void TIM1_UP_IRQHandler(void) IN_RAM;
 void TIM1_UP_IRQHandler(void) {
   if (TIM_GetITStatus(TIM1, TIM_IT_Update) == RESET) {
     return;
@@ -133,7 +134,7 @@ void TIM1_UP_IRQHandler(void) {
 
 }
 
-#include "tides/easter_egg/plotter_program.h"
+//#include "tides/easter_egg/plotter_program.h"
 
 void Init() {
   sys.Init(F_CPU / (48000 * 2) - 1, true);
@@ -143,7 +144,7 @@ void Init() {
   gate_output.Init();
   gate_input.Init();
   generator.Init();
-  plotter.Init(plotter_program, sizeof(plotter_program) / sizeof(PlotInstruction));
+//  plotter.Init(plotter_program, sizeof(plotter_program) / sizeof(PlotInstruction));
   ui.Init(&generator, &cv_scaler);
   sys.StartTimers();
 }

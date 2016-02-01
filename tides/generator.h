@@ -152,7 +152,7 @@ class Generator {
     return render_block_ != playback_block_;
   }
   
-  inline void Process() {
+  inline void Process() IN_RAM {
     while (render_block_ != playback_block_) {
       uint8_t* in = input_samples_[render_block_];
       GeneratorSample* out = output_samples_[render_block_];
@@ -179,7 +179,7 @@ class Generator {
   // band-limiting.
   void ProcessAudioRate(const uint8_t* in, GeneratorSample* out, size_t size);
   void ProcessControlRate(const uint8_t* in, GeneratorSample* out, size_t size);
-  void ProcessWavetable(const uint8_t* in, GeneratorSample* out, size_t size);
+  void ProcessWavetable(const uint8_t* in, GeneratorSample* out, size_t size) IN_RAM;
   void ProcessFilterWavefolder(GeneratorSample* in_out, size_t size);
 
   int32_t ComputeAntialiasAttenuation(
