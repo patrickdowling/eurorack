@@ -211,6 +211,7 @@ class Settings {
   void SavePreset(uint16_t preset_slot);
   bool LoadPreset(uint16_t preset_slot, bool load_calibration);
   void LoadDefaults(bool load_calibration);
+  void LoadSaved(bool load_calibration);
   void Reset();
   
   void SetValue(Setting setting, uint8_t value) {

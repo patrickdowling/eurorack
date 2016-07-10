@@ -136,6 +136,19 @@ void Settings::LoadDefaults(bool load_calibration) {
   CheckPaques();
 }
 
+void Settings::LoadSaved(bool load_calibration) {
+  const int32_t pitch_cv_offset = data_.pitch_cv_offset;
+  const int32_t pitch_cv_scale = data_.pitch_cv_scale;
+  const int32_t fm_cv_offset = data_.fm_cv_offset;
+
+  Init();
+  if (!load_calibration) {
+    data_.pitch_cv_offset = pitch_cv_offset;
+    data_.pitch_cv_scale = pitch_cv_scale;
+    data_.fm_cv_offset = fm_cv_offset;
+  }
+}
+
 void Settings::CheckPaques() {
   paques_ = !strcmp(data_.marquee_text, "49");
 }
