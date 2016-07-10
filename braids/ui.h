@@ -45,7 +45,8 @@ enum UiMode {
   MODE_MENU,
   MODE_CALIBRATION_STEP_1,
   MODE_CALIBRATION_STEP_2,
-  MODE_MARQUEE_EDITOR
+  MODE_MARQUEE_EDITOR,
+  MODE_SELECT_PRESET,
 };
 
 class Ui {
@@ -102,6 +103,8 @@ class Ui {
   void OnClick();
   void OnLongClick();
   void RefreshDisplay();
+  void OnClickPreset(bool long_click);
+  void DisplayPreset(char prefix);
 
   stmlib::EventQueue<16> queue_;
   
@@ -128,6 +131,8 @@ class Ui {
   bool blink_;
   
   MacroOscillatorShape meta_shape_;
+
+  int16_t preset_slot_, last_preset_slot_;
 
   DISALLOW_COPY_AND_ASSIGN(Ui);
 };

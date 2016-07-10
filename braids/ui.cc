@@ -27,6 +27,7 @@
 // User interface.
 
 #include "braids/ui.h"
+#include "braids/preset_storage.h"
 
 #include <cstring>
 
@@ -47,6 +48,7 @@ void Ui::Init() {
   mode_ = MODE_SPLASH;
   setting_ = SETTING_OSCILLATOR_SHAPE;
   setting_index_ = 0;
+  preset_slot_ = last_preset_slot_ = 0;
 }
 
 void Ui::Poll() {
@@ -154,6 +156,26 @@ void Ui::RefreshDisplay() {
       }
       break;
 
+    case MODE_SELECT_PRESET:
+      {
+        if (setting_ == SETTING_LOAD_PRESET) {
+          if (preset_slot_ < kNumPresetSlots)
+            DisplayPreset('<');
+          else if (preset_slot_ == kNumPresetSlots)
+            display_.Print("SAVD");
+          else if (preset_slot_ == kNumPresetSlots + 1)
+            display_.Print("DFLT");
+          else
+            display_.Print("EXIT");
+        } else {
+          if (preset_slot_ < kNumPresetSlots)
+            DisplayPreset('>');
+          else
+            display_.Print("EXIT");
+        }
+      }
+      break;
+
     default:
       break;
   }
@@ -178,9 +200,16 @@ void Ui::OnLongClick() {
       } else if (setting_ == SETTING_VERSION) {
         settings.Reset();
         settings.Save();
+      } else if (setting_ == SETTING_OSCILLATOR_SHAPE) {
+        preset_slot_ = last_preset_slot_;
+        mode_ = MODE_SELECT_PRESET;
       }
       break;
     
+    case MODE_SELECT_PRESET:
+      OnClickPreset(true);
+      break;
+
     default:
       break;
   }
@@ -222,6 +251,9 @@ void Ui::OnClick() {
         }
       } else if (setting_ == SETTING_VERSION) {
         mode_ = MODE_SPLASH;
+      } else if (setting_ == SETTING_LOAD_PRESET) {
+        preset_slot_ = last_preset_slot_;
+        mode_ = MODE_SELECT_PRESET;
       }
       break;
       
@@ -234,7 +266,11 @@ void Ui::OnClick() {
       settings.Calibrate(dac_code_c2_, cv_[2], cv_[3]);
       mode_ = MODE_MENU;
       break;
-      
+
+    case MODE_SELECT_PRESET:
+      OnClickPreset(false);
+      break;
+
     default:
       break;
   }
@@ -277,7 +313,18 @@ void Ui::OnIncrement(const Event& e) {
         marquee_step_ = 0;
       }
       break;
-      
+
+    case MODE_SELECT_PRESET:
+      {
+        preset_slot_ += e.data;
+        if (setting_ == SETTING_LOAD_PRESET) {
+          CONSTRAIN(preset_slot_, 0, kNumPresetSlots + 2);
+        } else {
+          CONSTRAIN(preset_slot_, 0, kNumPresetSlots);
+        }
+      }
+      break;
+
     default:
       break;
   }
@@ -325,5 +372,49 @@ void Ui::DoEvents() {
     blink_ = false;
   }
 }
+
+void Ui::OnClickPreset(bool long_click) {
+
+  bool done = true;
+  if (setting_ == SETTING_LOAD_PRESET) {
+    bool load_calibration = long_click;
+    if (preset_slot_ < kNumPresetSlots)
+      settings.LoadPreset(preset_slot_, load_calibration);
+    else if (preset_slot_ == kNumPresetSlots)
+      settings.LoadSaved(load_calibration);
+    else if (preset_slot_ == kNumPresetSlots + 1)
+      settings.LoadDefaults(load_calibration);
+    else
+      done = false;
+  } else if (setting_ == SETTING_OSCILLATOR_SHAPE) {
+    if (preset_slot_ < kNumPresetSlots) {
+      settings.SavePreset(preset_slot_);
+      if (long_click)
+        settings.Save();
+    } else {
+      done = false;
+    }
+  }
+
+  if (done) {
+    if (preset_slot_ < kNumPresetSlots)
+      last_preset_slot_ = preset_slot_;
+    // mode_ = MODE_SPLASH;
+    mode_ = MODE_EDIT;
+    setting_ = SETTING_OSCILLATOR_SHAPE;
+  } else {
+    mode_ = MODE_MENU;
+  }
+}
+
+void Ui::DisplayPreset(char prefix) {
+  char text[4]; // Display::Print uses strncpy
+  text[0] = prefix;
+  text[1] = 'P';
+  text[2] = '0' + (preset_slot_ + 1) / 10;
+  text[3] = '0' + (preset_slot_ + 1) % 10;
+  display_.Print(text);
+}
+
 
 }  // namespace braids

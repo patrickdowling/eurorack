@@ -342,7 +342,7 @@ const char* const note_values[] = {
 
 /* static */
 const SettingMetadata Settings::metadata_[] = {
-  { 0, MACRO_OSC_SHAPE_LAST - 2, "WAVE", algo_values },
+  { 0, MACRO_OSC_SHAPE_LAST - 2, "SAVE", algo_values },
   { 0, RESOLUTION_LAST - 1, "BITS", bits_values },
   { 0, SAMPLE_RATE_LAST - 1, "RATE", rates_values },
   { 0, 15, "\x8F""TIM", zero_to_fifteen_values },
@@ -365,12 +365,14 @@ const SettingMetadata Settings::metadata_[] = {
   { 0, 0, "CAL.", NULL },
   { 0, 0, "    ", NULL },  // Placeholder for CV tester
   { 0, 0, "    ", NULL },  // Placeholder for marquee
-  { 0, 0, "v1.8", NULL },  // Placeholder for version string
+  { 0, 0, "P180", NULL },  // Placeholder for version string
+  { 0, 0, "LOAD", NULL },  // Placeholder for preset loading
 };
 
 /* static */
 const Setting Settings::settings_order_[] = {
   SETTING_OSCILLATOR_SHAPE,
+  SETTING_LOAD_PRESET,
   SETTING_META_MODULATION,
   SETTING_RESOLUTION,
   SETTING_SAMPLE_RATE,
