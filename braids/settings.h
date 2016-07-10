@@ -208,6 +208,9 @@ class Settings {
   
   void Init();
   void Save();
+  void SavePreset(uint16_t preset_slot);
+  bool LoadPreset(uint16_t preset_slot, bool load_calibration);
+  void LoadDefaults(bool load_calibration);
   void Reset();
   
   void SetValue(Setting setting, uint8_t value) {
@@ -329,6 +332,7 @@ class Settings {
   
  private:
   void CheckPaques();
+  bool ValidateSettings() const;
 
   SettingsData data_;
   
@@ -342,7 +346,7 @@ class Settings {
 };
 
 extern Settings settings;
-
+extern const SettingsData kInitSettings;
 }  // namespace braids
 
 #endif  // BRAIDS_SETTINGS_H_

@@ -45,6 +45,7 @@
 #include "braids/ui.h"
 
 #include "braids/quantizer_scales.h"
+#include "braids/preset_storage.h"
 
 // #define PROFILE_RENDER 1
 
@@ -140,6 +141,7 @@ void TIM1_UP_IRQHandler(void) {
 void Init() {
   sys.Init(F_CPU / 96000 - 1, true);
   settings.Init();
+  preset_storage.Init();
   ui.Init();
   system_clock.Init();
   adc.Init(false);

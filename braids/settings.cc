@@ -27,11 +27,11 @@
 // Settings
 
 #include "braids/settings.h"
+#include "braids/preset_storage.h"
 
 #include <cstring>
 
 #include "stmlib/system/storage.h"
-#include "stmlib/utils/murmurhash3.h"
 
 namespace braids {
 
@@ -67,14 +67,21 @@ const SettingsData kInitSettings = {
   15401,
   2048,
   "GREETINGS FROM MUTABLE INSTRUMENTS *EDIT ME*",
+  'M'
 };
 
 Storage<0x8020000, 4> storage;
 
 void Settings::Init() {
-  if (!storage.ParsimoniousLoad(&data_, &version_token_)) {
+  if (!storage.ParsimoniousLoad(&data_, &version_token_) ||
+      !ValidateSettings()) {
     Reset();
   }
+
+  CheckPaques();
+}
+
+bool Settings::ValidateSettings() const {
   bool settings_within_range = true;
   for (int32_t i = 0; i <= SETTING_LAST_EDITABLE_SETTING; ++i) {
     const Setting setting = static_cast<Setting>(i);
@@ -85,10 +92,7 @@ void Settings::Init() {
         value <= setting_metadata.max_value;
   }
   settings_within_range = settings_within_range && data_.magic_byte == 'M';
-  if (!settings_within_range) {
-    Reset();
-  }
-  CheckPaques();
+  return settings_within_range;
 }
 
 void Settings::Reset() {
@@ -99,6 +103,36 @@ void Settings::Reset() {
 void Settings::Save() {
   data_.magic_byte = 'M';
   storage.ParsimoniousSave(data_, &version_token_);
+  CheckPaques();
+}
+
+void Settings::SavePreset(uint16_t preset_slot) {
+  preset_storage.Save(preset_slot, &data_, "\0\0\0\0");
+}
+
+bool Settings::LoadPreset(uint16_t preset_slot, bool load_calibration) {
+  preset_storage.Load(preset_slot, &data_, load_calibration);
+    
+  bool valid = ValidateSettings();
+  if (!valid)
+    Reset();
+
+  CheckPaques();
+  return valid;
+}
+
+void Settings::LoadDefaults(bool load_calibration) {
+  const int32_t pitch_cv_offset = data_.pitch_cv_offset;
+  const int32_t pitch_cv_scale = data_.pitch_cv_scale;
+  const int32_t fm_cv_offset = data_.fm_cv_offset;
+
+  Reset();
+  if (!load_calibration) {
+    data_.pitch_cv_offset = pitch_cv_offset;
+    data_.pitch_cv_scale = pitch_cv_scale;
+    data_.fm_cv_offset = fm_cv_offset;
+  }
+
   CheckPaques();
 }
 
