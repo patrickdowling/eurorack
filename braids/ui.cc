@@ -410,7 +410,7 @@ void Ui::OnClickPreset(bool long_click) {
 void Ui::DisplayPreset(char prefix) {
   char text[4]; // Display::Print uses strncpy
   text[0] = prefix;
-  text[1] = 'P';
+  text[1] = ' ';
   text[2] = '0' + (preset_slot_ + 1) / 10;
   text[3] = '0' + (preset_slot_ + 1) % 10;
   display_.Print(text);
