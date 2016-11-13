@@ -66,8 +66,8 @@ class PresetStorage {
 public:
 
   static const uint16_t kNumPages = 4;
-  static const uint32_t FLASH_STORAGE_BASE = stmlib::Storage<0x8020000 - 4 * PAGE_SIZE, kNumPages>::FLASH_STORAGE_BASE;
-  static const uint32_t kMagic = stmlib::FourCC<'P','R','E','1'>::value;
+  static const uint32_t FLASH_STORAGE_BASE = 0x08004000 - kNumPages * PAGE_SIZE; // 0x08004000 == end of bootloader flash
+  static const uint32_t kMagic = stmlib::FourCC<'B','R','D','1'>::value;
 
   PresetStorage() { }
   ~PresetStorage() { }
