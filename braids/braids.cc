@@ -224,7 +224,7 @@ void RenderBlock(const Parameters *block_parameters) {
     uint16_t value = block_parameters->parameters[i] << 3;
     Setting ad_mod_setting = i == 0 ? SETTING_AD_TIMBRE : SETTING_AD_COLOR;
     value += ad_value * settings.GetValue(ad_mod_setting) >> 5;
-    if (value > 32767) value = 32767;
+    CONSTRAIN(value, 0, 32767);
     parameters[i] = value;
   }
   osc.set_parameters(parameters[0], parameters[1]);

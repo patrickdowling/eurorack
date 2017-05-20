@@ -51,9 +51,6 @@ class MacroOscillator {
     analog_oscillator_[0].Init();
     analog_oscillator_[1].Init();
     analog_oscillator_[2].Init();
-    analog_oscillator_[3].Init();
-    analog_oscillator_[4].Init();
-    analog_oscillator_[5].Init();
     digital_oscillator_.Init();
     lp_state_ = 0;
     previous_parameter_[0] = 0;
@@ -90,6 +87,7 @@ class MacroOscillator {
   void RenderCSaw(const uint8_t*, int16_t*, size_t);
   void RenderMorph(const uint8_t*, int16_t*, size_t);
   void RenderSawSquare(const uint8_t*, int16_t*, size_t);
+  void RenderSub(const uint8_t*, int16_t*, size_t);
   void RenderDualSync(const uint8_t*, int16_t*, size_t);
   void RenderSineTriangle(const uint8_t*, int16_t*, size_t);
   void RenderBuzz(const uint8_t*, int16_t*, size_t);

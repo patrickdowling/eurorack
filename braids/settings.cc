@@ -68,7 +68,6 @@ const SettingsData kInitSettings = {
   0,  // AD->COLOR
   0,  // AD->VCA
   0,  // Quantizer root
-
   "GREETINGS FROM MUTABLE INSTRUMENTS *EDIT ME*",
 };
 
@@ -148,6 +147,8 @@ const char* const algo_values[] = {
     "\x88\x8A\x8C\x8D",
     "FOLD",
     "\x8E\x8E\x8E\x8E",
+    "SUB\x8C",
+    "SUB\x88",
     "SYN\x8C",
     "SYN\x88",
     "\x88\x88x3",
@@ -329,7 +330,7 @@ const SettingMetadata Settings::metadata_[] = {
   { 0, 0, "    ", NULL },  // Placeholder for CV tester
   { 0, 0, "    ", NULL },  // Placeholder for CV debug
   { 0, 0, "    ", NULL },  // Placeholder for marquee
-  { 0, 0, "v1.8", NULL },  // Placeholder for version string
+  { 0, 0, "v1.9", NULL },  // Placeholder for version string
 };
 
 /* static */

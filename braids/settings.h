@@ -41,6 +41,8 @@ enum MacroOscillatorShape {
   MACRO_OSC_SHAPE_SINE_TRIANGLE,
   MACRO_OSC_SHAPE_BUZZ,
   
+  MACRO_OSC_SHAPE_SQUARE_SUB,
+  MACRO_OSC_SHAPE_SAW_SUB,
   MACRO_OSC_SHAPE_SQUARE_SYNC,
   MACRO_OSC_SHAPE_SAW_SYNC,
   MACRO_OSC_SHAPE_TRIPLE_SAW,
@@ -314,7 +316,7 @@ class Settings {
           (scale * ((adc_code_c2 + adc_code_c4) >> 1) >> 12);
       calibration_data_.fm_cv_offset = adc_code_fm;
     }
-    SaveCalibration() ;
+    SaveCalibration();
   }
   
   inline int32_t adc_to_pitch(int32_t pitch_adc_code) const {
@@ -353,6 +355,14 @@ class Settings {
     }
     return fm_adc_code;
   }
+  
+#if 0
+  inline int32_t adc_to_parameter(int index, int32_t adc_code) const {
+    int32_t scale = static_cast<int32_t>(data_.parameter_cv_scale[index]);
+    int32_t offset = static_cast<int32_t>(data_.parameter_cv_offset[index]);
+    return (scale * adc_code >> 12) + offset;
+  }
+#endif
 
   inline bool paques() const {
     return paques_;

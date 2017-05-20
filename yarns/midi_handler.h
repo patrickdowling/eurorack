@@ -92,28 +92,10 @@ class MidiHandler {
   
   static void PitchBend(uint8_t channel, uint16_t pitch_bend) {
     if (multi.PitchBend(channel, pitch_bend) && !multi.direct_thru()) {
-      Send3(0xe0 | channel, pitch_bend >> 7, pitch_bend & 0x7f);
+      Send3(0xe0 | channel, pitch_bend & 0x7f, pitch_bend >> 7);
     }
   }
 
-  static void AllSoundOff(uint8_t channel) {
-    if (multi.AllSoundOff(channel) && !multi.direct_thru()) {
-      Send3(0xb0 | channel, 0x78, 0x00);
-    }
-  }
-  
-  static void ResetAllControllers(uint8_t channel) {
-    if (multi.ResetAllControllers(channel) && !multi.direct_thru()) {
-      Send3(0xb0 | channel, 0x79, 0x00);
-    }
-  }
-  
-  static void AllNotesOff(uint8_t channel) {
-    if (multi.AllNotesOff(channel) && !multi.direct_thru()) {
-      Send3(0xb0 | channel, 0x7b, 0x00);
-    }
-  }
-  
   static void SysExStart() {
     sysex_rx_write_ptr_ = 0;
     ProcessSysExByte(0xf0);

@@ -58,6 +58,9 @@ enum VoiceAllocationMode {
   VOICE_ALLOCATION_MODE_POLY_CYCLIC,
   VOICE_ALLOCATION_MODE_POLY_RANDOM,
   VOICE_ALLOCATION_MODE_POLY_VELOCITY,
+  VOICE_ALLOCATION_MODE_POLY_SORTED,
+  VOICE_ALLOCATION_MODE_POLY_UNISON_1,
+  VOICE_ALLOCATION_MODE_POLY_UNISON_2,
   VOICE_ALLOCATION_MODE_LAST
 };
 
@@ -111,7 +114,8 @@ struct VoicingSettings {
   uint8_t trigger_shape;
   uint8_t aux_cv;
   uint8_t audio_mode;
-  uint8_t padding[16];
+  uint8_t aux_cv_2;
+  uint8_t padding[15];
 };
 
 
@@ -139,6 +143,7 @@ enum PartSetting {
   PART_VOICING_TRIGGER_SHAPE,
   PART_VOICING_AUX_CV,
   PART_VOICING_AUDIO_MODE,
+  PART_VOICING_AUX_CV_2,
   PART_VOICING_LAST = PART_VOICING_ALLOCATION_MODE + sizeof(VoicingSettings) - 1,
   PART_SEQUENCER_CLOCK_DIVISION,
   PART_SEQUENCER_GATE_LENGTH,
@@ -225,9 +230,7 @@ class Part {
   bool PitchBend(uint8_t channel, uint16_t pitch_bend);
   bool Aftertouch(uint8_t channel, uint8_t note, uint8_t velocity);
   bool Aftertouch(uint8_t channel, uint8_t velocity);
-  bool AllNotesOff(uint8_t channel);
-  bool AllSoundOff(uint8_t channel);
-  bool ResetAllControllers(uint8_t channel);
+  void AllNotesOff();
   void Reset();
   void Clock();
   void Start(bool started_by_keyboard);
@@ -349,13 +352,14 @@ class Part {
  private:
   int16_t Tune(int16_t note);
   void ResetAllControllers();
-  void AllNotesOff();
   void TouchVoiceAllocation();
   void TouchVoices();
   void InternalNoteOn(uint8_t note, uint8_t velocity);
   void InternalNoteOff(uint8_t note);
   
   void ReleaseLatchedNotes();
+  void DispatchSortedNotes(bool unison);
+  void KillAllInstancesOfNote(uint8_t note);
   
   void ClockSequencer();
   void ClockArpeggiator();
@@ -376,7 +380,7 @@ class Part {
   stmlib::NoteStack<12> pressed_keys_;
   stmlib::NoteStack<12> generated_notes_;  // by sequencer or arpeggiator.
   stmlib::NoteStack<12> mono_allocator_;
-  stmlib::VoiceAllocator<kMaxNumVoices> poly_allocator_;
+  stmlib::VoiceAllocator<kMaxNumVoices * 2> poly_allocator_;
   uint8_t active_note_[kMaxNumVoices];
   uint8_t cyclic_allocation_note_counter_;
   
