@@ -69,7 +69,7 @@ class CvAdc {
     }
   }
 
-  inline uint16_t value(size_t channel) const {
+  inline int32_t value(size_t channel) const {
     return values_[channel];
   }
 

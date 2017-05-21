@@ -46,9 +46,10 @@ enum UiMode {
   MODE_SPLASH,
   MODE_EDIT,
   MODE_MENU,
-  MODE_CALIBRATION_STEP_1,
-  MODE_CALIBRATION_STEP_2,
-  MODE_CALIBRATION_STEP_3,
+  MODE_CALIBRATION_STEP_1, // Pots
+  MODE_CALIBRATION_STEP_2, // 0V
+  MODE_CALIBRATION_STEP_3, // 1V
+  MODE_CALIBRATION_STEP_4, // 3V
   MODE_MARQUEE_EDITOR
 };
 
@@ -152,8 +153,7 @@ class Ui {
   Switches switches_;
 
   CvScaler *cv_scaler_;
-  uint16_t dac_code_c2_;
-  uint16_t dac_code_c4_;
+  int32_t adc_1v_;
 
   size_t cv_index_;
   

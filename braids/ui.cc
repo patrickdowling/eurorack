@@ -169,14 +169,14 @@ void Ui::RefreshDisplay() {
           char text[] = "    ";
           if (!blink_) {
             for (uint8_t i = 0; i < kDisplayWidth; ++i) {
-              text[i] = '\x90' + ((cv_scaler_->cv_value(i) >> 4) * 7 >> 12);
+              text[i] = '\x90' + ((4095 - (cv_scaler_->raw_cv_value(i) >> 4)) * 7 >> 12);
             }
           }
           display_.Print(text);
         } else if (setting_ == SETTING_CV_DEBUG) {
           if (!blink_) {
             if (cv_index_ < CV_ADC_CHANNEL_LAST)
-              PrintDebugHex(cv_scaler_->cv_value(cv_index_));
+              PrintDebugHex(cv_scaler_->raw_cv_value(cv_index_) >> 4);
             else
               PrintDebugHex(cv_scaler_->pot_value(cv_index_ - CV_ADC_CHANNEL_LAST));
             decimal_hex = cv_index_ + 1;
@@ -206,11 +206,15 @@ void Ui::RefreshDisplay() {
       break;
 
     case MODE_CALIBRATION_STEP_2:
-      display_.Print(">C2 "); // 1V
+      display_.Print("> 0V");
       break;
 
     case MODE_CALIBRATION_STEP_3:
-      display_.Print(">C4 "); // 3V
+      display_.Print("> 1V");
+      break;
+
+    case MODE_CALIBRATION_STEP_4:
+      display_.Print("> 3V");
       break;
 
     case MODE_MARQUEE_EDITOR:
@@ -304,17 +308,22 @@ void Ui::OnClick() {
       break;
 
     case MODE_CALIBRATION_STEP_1:
-      cv_scaler_->CalibrateOffsets();
+      cv_scaler_->CalibratePotOffsets();
       mode_ = MODE_CALIBRATION_STEP_2;
       break;
-      
+
     case MODE_CALIBRATION_STEP_2:
-      cv_scaler_->Calibrate1V();
+      cv_scaler_->CalibrateCVOffsets();
       mode_ = MODE_CALIBRATION_STEP_3;
       break;
-
+      
     case MODE_CALIBRATION_STEP_3:
-      if (cv_scaler_->Calibrate3V()) {
+      adc_1v_ = cv_scaler_->cv_value(CV_ADC_VOCT);
+      mode_ = MODE_CALIBRATION_STEP_4;
+      break;
+
+    case MODE_CALIBRATION_STEP_4:
+      if (cv_scaler_->Calibrate(adc_1v_, cv_scaler_->cv_value(CV_ADC_VOCT))) {
         settings.SaveCalibration();
         mode_ = MODE_MENU;
       } else {

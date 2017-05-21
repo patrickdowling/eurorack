@@ -40,7 +40,8 @@ const CalibrationData kInitCalibration = {
   50, // pitch_cv_offset
   10754/*15401*/, // pitch_cv_scale
   2048, // fm_cv_offset
-  {0, 0, 0, 0, 0, 0} // offset
+  {43691, 32768, 32768, 32768}, // cv_offset
+  {0, 0, 0, 0, 0, 0} // pot_zero
 };
 
 const SettingsData kInitSettings = {

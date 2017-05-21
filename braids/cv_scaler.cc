@@ -54,62 +54,58 @@ void CvScaler::Read(Parameters *parameters) {
   pot_adc_.Convert();
   cv_adc_.Sample();
 
-  int32_t pitch_cv = readCvUni<CV_ADC_VOCT>();
-  int32_t pitch_coarse = readPot<POT_PITCH, 0>();
+  int32_t pitch_cv = readCV<CV_ADC_VOCT>();
+  int32_t pitch_coarse = readAttenuverterPot<POT_PITCH>();
 
-  parameters->pitch = adc_to_pitch(pitch_cv, pitch_coarse);
+  parameters->pitch = adc_to_pitch(pitch_cv >> 4, pitch_coarse >> 4);
 
   // expects int32_t, No shift required
-  parameters->pitch_fine = readPot<POT_FINE, -32768>();
+  parameters->pitch_fine = readAttenuverterPot<POT_FINE>();
 
   // TODO used calibrated offset?
-  int32_t fm = attenuvert(readCvBi<CV_ADC_FM>(),
-                          readPot<POT_FM, -32768>());
+  int32_t fm = attenuvert(readCV<CV_ADC_FM>(),
+                          readAttenuverterPot<POT_FM>());
   parameters->fm = stmlib::Clip16(fm) >> 4;
 
   int32_t value;
 
   // cv input is 10v (-5,5), so scale x 2 to allow full range change for (-5,0) and (0,5)
 
-  value = readPot<POT_PARAM1, 0>()
-      + attenuvert(2 * readCvBi<CV_ADC_PARAM1>(),
-                   readPot<POT_MOD, -32768>());
-  CONSTRAIN(value, 0, 65535)
-  parameters->parameters[0] = value >> 4;
+  value = readPot<POT_PARAM1>()
+      + attenuvert(2 * readCV<CV_ADC_PARAM1>(),
+                   readAttenuverterPot<POT_MOD>());
+  parameters->parameters[0] = stmlib::ClipU16(value) >> 4;
 
-  value = readPot<POT_PARAM2, 0>() + 2 * readCvBi<CV_ADC_PARAM2>();
-  CONSTRAIN(value, 0, 65535)
-  parameters->parameters[1] = value >> 4;
+  value = readPot<POT_PARAM2>() + 2 * readCV<CV_ADC_PARAM2>();
+  parameters->parameters[1] = stmlib::ClipU16(value) >> 4;
 }
 
 int32_t CvScaler::adc_to_pitch(int32_t pitch_cv, int32_t pitch_coarse) {
+  // NOTE: pitch_cv and pitch_coarse are 12bit
+
   const PitchRange pitch_range = settings.pitch_range();
   int32_t pitch;
 
-  // pitch_coarse as 12 bit = 4096 / 128 = 32 semitones = 2.8 octaves, so for four octaves
-  // scale by (48 * 128) / 4096
-
-  // TODO pitch_cv_offset
-
   if (pitch_range == PITCH_RANGE_EXTERNAL ||
       pitch_range == PITCH_RANGE_LFO) {
-  // +/- 4 octaves around the note received on the V/Oct input
+  // coarse moves around the note received on the V/Oct input
     pitch = pitch_cv * calibration_data_->pitch_cv_scale >> 12;
-    pitch += pitch_coarse * (48 * 128) >> 12;
+    pitch += (1024 + pitch_coarse) * kCoarseRange >> 12;
+//    pitch += calibration_data_->pitch_cv_offset;
   } else if (pitch_range == PITCH_RANGE_FREE) {
-  // +/- 4 octave centered around C3
-    pitch = 60 << 7 << 4;
-    pitch += pitch_coarse * (48 * 128) >> 12;
+  // coarse moves centered around C3
+    pitch = 60 << 7;
+    pitch += pitch_coarse * kCoarseRange >> 12;
     pitch += pitch_cv * calibration_data_->pitch_cv_scale >> 12;
   } else if (pitch_range == PITCH_RANGE_440) {
   // locks the oscillator frequency to 440 Hz exactly
-    pitch = 69 << 7 << 4;
+    pitch = 69 << 7;
   } else {
   // XTND (extended) provides a larger frequency range, but disables accurate V/Oct scaling as a side effect.
-    pitch = pitch_cv + pitch_coarse;
+    pitch = (pitch_cv + pitch_coarse) * 9 >> 1;
   }
 
-  return pitch >> 4;
+  return pitch;
 }
 
 void CvScaler::LockPots(uint16_t mask, int32_t *snap_values) {

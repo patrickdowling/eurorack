@@ -104,6 +104,10 @@ public:
       return locked_value_;
   }
 
+  int32_t smoothed_value() const {
+    return smoothed_value_;
+  }
+
 private:
   int32_t smoothed_value_;
   int32_t locked_value_;
@@ -117,35 +121,44 @@ public:
   CvScaler() { }
   ~CvScaler() { }
 
+  static const int32_t kCoarseRange = 8 * 12 << 7;
+
   void Init(CalibrationData *calibration_data);
 
   void Read(Parameters *parameters);
 
-  inline uint16_t cv_value(size_t channel) const {
-    return cv_adc_.value(channel);
+  inline int32_t raw_cv_value(size_t channel) const {
+    return static_cast<int32_t>(cv_adc_.value(channel));
   }
 
-  inline uint16_t pot_value(size_t channel) const {
+  inline int32_t cv_value(size_t channel) const {
+    return static_cast<int32_t>(calibration_data_->cv_offset[channel]) - cv_adc_.value(channel);
+  }
+
+  inline uint16_t raw_pot_value(size_t channel) const {
     return pot_adc_.value(channel);
   }
 
-  void CalibrateOffsets() {
-    std::copy(pot_adc_.values(), pot_adc_.values() + POT_LAST, calibration_data_->offset);
+  inline int32_t pot_value(size_t channel) const {
+    return pots_[channel].smoothed_value();
   }
 
-  void Calibrate1V() {
-    cv_c2_ = cv_adc_.value(CV_ADC_VOCT) >> 4;
+  void CalibratePotOffsets() {
+    std::copy(pot_adc_.values(), pot_adc_.values() + POT_LAST, calibration_data_->pot_zero_offset);
   }
 
-  bool Calibrate3V() {
-    int32_t c2 = cv_c2_;
-    int32_t c4 = cv_adc_.value(CV_ADC_VOCT) >> 4;
+  void CalibrateCVOffsets() {
+    std::copy(cv_adc_.values(), cv_adc_.values() + CV_ADC_CHANNEL_LAST, calibration_data_->cv_offset);
+  }
+
+  bool Calibrate(int32_t adc_1v, int32_t adc_3v) {
+    int32_t c2 = adc_1v >> 4;
+    int32_t c4 = adc_3v >> 4;
 
     if (c4 != c2) {
       int32_t scale = (24 * 128 * 4096L) / (c4 - c2);
       calibration_data_->pitch_cv_scale = scale;
-      calibration_data_->pitch_cv_offset = (60<<7) -
-          (scale * ((c2 + c4) >> 1) >> 12);
+      calibration_data_->pitch_cv_offset = (scale * ((c2 + c4) >> 1) >> 12);
       return true;
     } else {
       return false;
@@ -170,23 +183,21 @@ private:
   PotsAdc pot_adc_;
   CalibrationData *calibration_data_;
 
-  int32_t cv_c2_;
-
   LockableSmoothedPot pots_[POT_LAST];
 
-  template <Potentiometer pot, int32_t offset>
+  template <Potentiometer pot>
+  int32_t readAttenuverterPot() {
+    return pots_[pot].lockable_value() - 32768;
+  }
+
+  template <Potentiometer pot>
   int32_t readPot() {
-    return pots_[pot].lockable_value() + offset;
+    return pots_[pot].lockable_value();
   }
 
   template <CvAdcChannel channel>
-  int32_t readCvUni() {
-    return 65535 - cv_adc_.value(channel);
-  }
-
-  template <CvAdcChannel channel>
-  int32_t readCvBi() {
-    return 32767 - cv_adc_.value(channel);
+  int32_t readCV() {
+    return static_cast<int32_t>(calibration_data_->cv_offset[channel]) - cv_adc_.value(channel);
   }
 
   template <Potentiometer pot, int32_t samples>

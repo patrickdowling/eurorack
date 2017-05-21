@@ -30,6 +30,7 @@
 #define BRAIDS_SETTINGS_H_
 
 #include "stmlib/stmlib.h"
+#include "braids/drivers/cv_adc.h"
 #include "braids/drivers/pots_adc.h"
 
 namespace braids {
@@ -165,8 +166,9 @@ struct CalibrationData {
   int32_t pitch_cv_offset;
   int32_t pitch_cv_scale;
   int32_t fm_cv_offset;
-  uint16_t offset[POT_LAST];
 
+  uint16_t cv_offset[CV_ADC_CHANNEL_LAST];
+  uint16_t pot_zero_offset[POT_LAST];
 };
 
 struct SettingsData {
